@@ -1,0 +1,1 @@
+https://raw.githubusercontent.com/chanind/hanzi-writer-data/master/data/头.json
