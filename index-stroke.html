@@ -838,10 +838,10 @@
     const SVG_NS = 'http://www.w3.org/2000/svg';
     // Frame transform mirrors the demo: shift + flip (hanzi-writer-data uses cartesian Y-up)
     const frame = document.createElementNS(SVG_NS, 'g');
-    frame.setAttribute('transform', 'translate(30 -50)');
+    frame.setAttribute('transform', 'translate(140 80)');
     strokeSvg.appendChild(frame);
     const group = document.createElementNS(SVG_NS, 'g');
-    group.setAttribute('transform', 'translate(0 1024) scale(0.95 -0.95)');
+    group.setAttribute('transform', 'translate(0 768) scale(0.72 -0.72)');
     frame.appendChild(group);
 
     const strokeSpeed = 500; // px per second
