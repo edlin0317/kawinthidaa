@@ -26,8 +26,6 @@
     position: relative;
     isolation: isolate;
   }
-  /* Wallpaper layer — sits behind everything, with a translucent gradient overlay
-     so the existing UI colors and white text stay legible. */
   body::before {
     content: "";
     position: fixed; inset: 0;
@@ -227,6 +225,29 @@
     font-size: 64px; font-weight: 700;
     line-height: 1.1; word-break: keep-all;
     display: flex; align-items: center; justify-content: center; gap: 4px;
+    flex-wrap: wrap;
+  }
+  .hanzi-char {
+    cursor: pointer;
+    border-radius: 6px;
+    padding: 0 4px;
+    transition: background .15s, color .15s;
+    position: relative;
+  }
+  .hanzi-char.tappable::after {
+    content: "";
+    position: absolute;
+    left: 12%; right: 12%;
+    bottom: 4px;
+    height: 2px;
+    background: rgba(108, 92, 231, .35);
+    border-radius: 2px;
+  }
+  .hanzi-char.tappable:hover {
+    background: rgba(108, 92, 231, .12);
+  }
+  .hanzi-char.tappable:active {
+    background: rgba(108, 92, 231, .22);
   }
   .card .word .pinyin {
     margin-top: 10px; font-size: 22px; color: #4b5563; font-style: italic;
@@ -307,6 +328,12 @@
     opacity: 0; transition: opacity .2s;
   }
   .card.front-hidden .tap-hint.show-when-hidden { opacity: 1; }
+  .stroke-hint {
+    text-align: center; font-size: 11px; color: rgba(108, 92, 231, .8);
+    margin-top: 6px;
+    opacity: 0; transition: opacity .2s;
+  }
+  .card.front-hidden .stroke-hint { opacity: 1; }
 
   /* ---------- Action buttons ---------- */
   .actions {
@@ -379,6 +406,122 @@
     flex: 1; display: flex; align-items: center; justify-content: center;
     color: white; text-align: center; padding: 24px; font-size: 16px;
   }
+
+  /* ---------- Stroke order modal ---------- */
+  #stroke-modal {
+    position: fixed; inset: 0;
+    background: rgba(20, 16, 30, .65);
+    backdrop-filter: blur(8px);
+    z-index: 1000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    touch-action: auto;
+  }
+  #stroke-modal.open { display: flex; }
+  .stroke-card {
+    background: linear-gradient(135deg, #f4efe8, #e0d1c2);
+    border-radius: 22px;
+    box-shadow: 0 25px 60px rgba(0,0,0,.4);
+    padding: 20px;
+    width: min(92vw, 420px);
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    color: #2b221d;
+  }
+  .stroke-top {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 12px;
+  }
+  .stroke-title {
+    font-size: 28px; font-weight: 700;
+    font-family: "PingFang TC", "Microsoft JhengHei", serif;
+    letter-spacing: .04em;
+  }
+  .stroke-close {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(43, 34, 29, .12);
+    color: #2b221d;
+    font-size: 18px; font-weight: 700;
+    cursor: pointer;
+    display: inline-flex; align-items: center; justify-content: center;
+  }
+  .stroke-close:hover { background: rgba(43, 34, 29, .22); }
+  .stroke-stage {
+    position: relative;
+    aspect-ratio: 1 / 1;
+    width: 100%;
+    display: grid; place-items: center;
+    background: rgba(255,255,255,.6);
+    border-radius: 16px;
+    border: 1px solid rgba(43, 34, 29, .12);
+  }
+  .stroke-grid {
+    position: absolute;
+    inset: 6%;
+    border-radius: 12px;
+    background:
+      linear-gradient(to right, transparent calc(33.333% - 0.5px), rgba(140,90,60,0.18) calc(33.333% - 0.5px), rgba(140,90,60,0.18) calc(33.333% + 0.5px), transparent calc(33.333% + 0.5px)),
+      linear-gradient(to right, transparent calc(66.666% - 0.5px), rgba(140,90,60,0.18) calc(66.666% - 0.5px), rgba(140,90,60,0.18) calc(66.666% + 0.5px), transparent calc(66.666% + 0.5px)),
+      linear-gradient(to bottom, transparent calc(33.333% - 0.5px), rgba(140,90,60,0.18) calc(33.333% - 0.5px), rgba(140,90,60,0.18) calc(33.333% + 0.5px), transparent calc(33.333% + 0.5px)),
+      linear-gradient(to bottom, transparent calc(66.666% - 0.5px), rgba(140,90,60,0.18) calc(66.666% - 0.5px), rgba(140,90,60,0.18) calc(66.666% + 0.5px), transparent calc(66.666% + 0.5px));
+    border: 1px dashed rgba(43, 34, 29, .2);
+  }
+  .stroke-glyph {
+    position: relative; z-index: 1;
+    width: 100%; height: 100%;
+    overflow: visible;
+  }
+  .stroke-layer {
+    fill: none;
+    stroke: #2d241f;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 48;
+    stroke-dasharray: var(--len);
+    stroke-dashoffset: var(--len);
+    animation: trace var(--stroke-duration) linear forwards;
+    animation-delay: var(--delay);
+  }
+  @keyframes trace { to { stroke-dashoffset: 0; } }
+  .stroke-loading, .stroke-error {
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    color: #6b5a4d; font-size: 14px;
+    text-align: center; padding: 20px;
+  }
+  .stroke-controls {
+    display: flex; gap: 8px;
+    margin-top: 12px;
+    justify-content: center;
+  }
+  .stroke-btn {
+    appearance: none; border: 0;
+    border-radius: 999px;
+    padding: 10px 18px;
+    background: #8c5a3c;
+    color: #fff;
+    font-size: 14px; font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 6px 16px rgba(140, 90, 60, .25);
+  }
+  .stroke-btn:hover { background: #7a4d34; }
+  .stroke-btn.ghost {
+    background: rgba(43, 34, 29, .08);
+    color: #2b221d;
+    box-shadow: none;
+  }
+  .stroke-btn.ghost:hover { background: rgba(43, 34, 29, .15); }
+  .stroke-meta {
+    margin-top: 10px;
+    font-size: 12px;
+    color: rgba(43, 34, 29, .7);
+    text-align: center;
+  }
 </style>
 </head>
 <body>
@@ -416,7 +559,7 @@
     </div>
 
     <button class="start-cta" id="start-btn">Start Round (30 words)</button>
-    <div class="hint">Tip: you can also use the buttons below the card.</div>
+    <div class="hint">Tip: tap a character on the card to see its stroke order.</div>
   </section>
 
   <!-- DECK SCREEN -->
@@ -445,6 +588,27 @@
   </section>
 </div>
 
+<!-- STROKE ORDER MODAL -->
+<div id="stroke-modal" role="dialog" aria-modal="true" aria-labelledby="stroke-title">
+  <div class="stroke-card">
+    <div class="stroke-top">
+      <div class="stroke-title" id="stroke-title">—</div>
+      <button class="stroke-close" id="stroke-close" aria-label="Close">✕</button>
+    </div>
+    <div class="stroke-stage">
+      <div class="stroke-grid" aria-hidden="true"></div>
+      <svg class="stroke-glyph" viewBox="0 0 1024 1024" aria-label="stroke animation" role="img"></svg>
+      <div class="stroke-loading" id="stroke-loading" hidden>Loading…</div>
+      <div class="stroke-error" id="stroke-error" hidden></div>
+    </div>
+    <div class="stroke-controls">
+      <button class="stroke-btn ghost" id="stroke-prev" hidden>← Prev</button>
+      <button class="stroke-btn" id="stroke-replay">Replay</button>
+      <button class="stroke-btn ghost" id="stroke-next" hidden>Next →</button>
+    </div>
+    <div class="stroke-meta" id="stroke-meta"></div>
+  </div>
+</div>
 
 <script>
 (async () => {
@@ -483,7 +647,7 @@
 
   let VOCAB;
   try {
-    const res = await fetch(assetUrl('vocab-data.json'), { cache: 'no-cache' });
+    const res = await fetch(assetUrl('vocab-data.json') + '?v=' + Date.now(), { cache: 'no-store' });
     if (!res.ok) throw new Error('HTTP ' + res.status);
     VOCAB = await res.json();
   } catch (err) {
@@ -495,12 +659,10 @@
   const ROUND_SIZE = 30;
 
   // ---------- Dictionary for translation pair alignment ----------
-  // Map: chinese token (tw or cn) -> { en: cleaned-meaning, full: original meaning }
   const DICT = (() => {
     const d = {};
     const cleanEn = raw => {
       if (!raw) return '';
-      // First comma/semicolon-separated chunk, drop leading parens, drop leading "to "
       let s = String(raw).split(/[,;]/)[0].trim();
       s = s.replace(/^\(.*?\)\s*/g, '').trim();
       s = s.replace(/^to\s+/i, '').trim();
@@ -510,15 +672,12 @@
       VOCAB[lvl].forEach(w => {
         const en = cleanEn(w.en);
         if (!en) return;
-        // Strip parenthetical/optional chars in keys: e.g. "外(面)" -> add both "外面" and "外"
         const candidates = new Set();
         [w.tw, w.cn].forEach(k => {
           if (!k) return;
           candidates.add(k);
-          // Remove parens content for one variant: 外(面) -> 外, plus full 外面
           candidates.add(k.replace(/[\(（].*?[\)）]/g, ''));
           candidates.add(k.replace(/[\(（]|[\)）]/g, ''));
-          // Split on slashes: 春/春天 -> 春 and 春天
           k.split(/[\/／]/).forEach(part => {
             const p = part.replace(/[\(（].*?[\)）]/g, '').replace(/[\(（]|[\)）]/g, '').trim();
             if (p) candidates.add(p);
@@ -532,13 +691,11 @@
     return d;
   })();
 
-  // Skip these as pair candidates — they pollute alignments
   const PAIR_SKIP = new Set([
     '的','了','嗎','呢','吧','呀','啊','嘛','喔','喲','著','過','在','是','把','被','也','都'
   ]);
   const PUNCT_RE = /[，。！？；：、,.!?;:"'""''「」『』（）()\s]/;
 
-  // Greedy longest-match Chinese tokenizer (max 4 chars)
   function tokenizeChinese(str) {
     const out = [];
     let i = 0;
@@ -556,18 +713,15 @@
     return out;
   }
 
-  // Find best matching English token index for a meaning string. Returns -1 if none.
   function findEnglishMatch(meaning, enTokens, used) {
     if (!meaning) return -1;
     const stem = meaning.toLowerCase().replace(/[^a-z]/g, '');
     if (stem.length < 2) return -1;
-    // First pass: exact word == stem
     for (let i = 0; i < enTokens.length; i++) {
       if (used.has(i) || enTokens[i].type !== 'word') continue;
       const w = enTokens[i].text.toLowerCase().replace(/[^a-z]/g, '');
       if (w === stem) { used.add(i); return i; }
     }
-    // Second pass: stem-aware prefix match (>=4 chars or whole word)
     for (let i = 0; i < enTokens.length; i++) {
       if (used.has(i) || enTokens[i].type !== 'word') continue;
       const w = enTokens[i].text.toLowerCase().replace(/[^a-z]/g, '');
@@ -581,7 +735,6 @@
     return -1;
   }
 
-  // Tokenize an English sentence into word/sep tokens.
   function tokenizeEnglish(str) {
     const out = [];
     const re = /([A-Za-z']+)|(\s+|[^A-Za-z']+)/g;
@@ -593,7 +746,6 @@
     return out;
   }
 
-  // Align Chinese & English example sentences and assign pair IDs.
   function alignExample(cnStr, enStr) {
     const cnTokens = tokenizeChinese(cnStr || '');
     const enTokens = tokenizeEnglish(enStr || '');
@@ -623,12 +775,175 @@
     }).join('');
   }
 
+  // ---------- Stroke order ----------
+  const STROKE_DATA_URL = ch =>
+    `https://raw.githubusercontent.com/chanind/hanzi-writer-data/master/data/${encodeURIComponent(ch)}.json`;
+  const STROKE_CACHE_PREFIX = 'strokes::';
+  const STROKE_MEM = new Map();
+  const CJK_RE = /[㐀-䶿一-鿿豈-﫿]/;
+
+  function isCJKChar(ch) { return CJK_RE.test(ch); }
+
+  async function loadStrokeData(ch) {
+    if (STROKE_MEM.has(ch)) return STROKE_MEM.get(ch);
+    // localStorage cache
+    try {
+      const cached = localStorage.getItem(STROKE_CACHE_PREFIX + ch);
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        STROKE_MEM.set(ch, parsed);
+        return parsed;
+      }
+    } catch (_) { /* localStorage may be disabled */ }
+
+    const res = await fetch(STROKE_DATA_URL(ch));
+    if (!res.ok) throw new Error(`HTTP ${res.status} for ${ch}`);
+    const data = await res.json();
+    STROKE_MEM.set(ch, data);
+    try { localStorage.setItem(STROKE_CACHE_PREFIX + ch, JSON.stringify(data)); } catch (_) {}
+    return data;
+  }
+
+  const strokeModal = document.getElementById('stroke-modal');
+  const strokeSvg = strokeModal.querySelector('.stroke-glyph');
+  const strokeTitle = document.getElementById('stroke-title');
+  const strokeLoading = document.getElementById('stroke-loading');
+  const strokeError = document.getElementById('stroke-error');
+  const strokeMeta = document.getElementById('stroke-meta');
+  const strokeReplay = document.getElementById('stroke-replay');
+  const strokePrev = document.getElementById('stroke-prev');
+  const strokeNext = document.getElementById('stroke-next');
+  const strokeClose = document.getElementById('stroke-close');
+
+  let currentStrokeQueue = [];
+  let currentStrokeIndex = 0;
+
+  function clearSvg() {
+    while (strokeSvg.firstChild) strokeSvg.removeChild(strokeSvg.firstChild);
+  }
+
+  function medianPath(points) {
+    const [first, ...rest] = points;
+    return `M ${first[0]} ${first[1]} ${rest.map(([x, y]) => `L ${x} ${y}`).join(' ')}`;
+  }
+
+  function animateStrokes(data) {
+    clearSvg();
+    if (!data || !Array.isArray(data.medians) || !data.medians.length) {
+      strokeError.textContent = 'No stroke data for this character.';
+      strokeError.hidden = false;
+      return;
+    }
+    strokeError.hidden = true;
+    const SVG_NS = 'http://www.w3.org/2000/svg';
+    // Frame transform mirrors the demo: shift + flip (hanzi-writer-data uses cartesian Y-up)
+    const frame = document.createElementNS(SVG_NS, 'g');
+    frame.setAttribute('transform', 'translate(140 -22)');
+    strokeSvg.appendChild(frame);
+    const group = document.createElementNS(SVG_NS, 'g');
+    group.setAttribute('transform', 'translate(0 768) scale(0.72 -0.72)');
+    frame.appendChild(group);
+
+    const strokeSpeed = 500; // px per second
+    const strokeGap = 0;     // seconds between strokes
+    let currentTime = 0;
+
+    data.medians.forEach(points => {
+      if (!points || !points.length) return;
+      const path = document.createElementNS(SVG_NS, 'path');
+      path.setAttribute('d', medianPath(points));
+      path.setAttribute('class', 'stroke-layer');
+      group.appendChild(path);
+      const length = path.getTotalLength() || 1;
+      const duration = Math.max(length / strokeSpeed, 0.2);
+      path.style.setProperty('--len', `${length}`);
+      path.style.setProperty('--stroke-duration', `${duration}s`);
+      path.style.setProperty('--delay', `${currentTime}s`);
+      currentTime += duration + strokeGap;
+    });
+    strokeMeta.textContent = `${data.medians.length} stroke${data.medians.length === 1 ? '' : 's'}`;
+  }
+
+  function restartAnimation() {
+    // force reflow so CSS animations restart
+    clearSvg();
+    strokeSvg.getBoundingClientRect();
+    const ch = currentStrokeQueue[currentStrokeIndex];
+    if (!ch) return;
+    const data = STROKE_MEM.get(ch);
+    if (data) animateStrokes(data);
+  }
+
+  async function showStrokeForIndex(idx) {
+    currentStrokeIndex = Math.max(0, Math.min(idx, currentStrokeQueue.length - 1));
+    const ch = currentStrokeQueue[currentStrokeIndex];
+    if (!ch) return;
+
+    // Multi-character navigation buttons
+    const multi = currentStrokeQueue.length > 1;
+    strokePrev.hidden = !multi;
+    strokeNext.hidden = !multi;
+    strokePrev.disabled = currentStrokeIndex === 0;
+    strokeNext.disabled = currentStrokeIndex === currentStrokeQueue.length - 1;
+    strokePrev.style.opacity = strokePrev.disabled ? .4 : 1;
+    strokeNext.style.opacity = strokeNext.disabled ? .4 : 1;
+
+    strokeTitle.textContent = multi
+      ? `${ch}  (${currentStrokeIndex + 1}/${currentStrokeQueue.length})`
+      : ch;
+
+    clearSvg();
+    strokeError.hidden = true;
+    strokeMeta.textContent = '';
+    strokeLoading.hidden = false;
+
+    try {
+      const data = await loadStrokeData(ch);
+      strokeLoading.hidden = true;
+      animateStrokes(data);
+    } catch (err) {
+      strokeLoading.hidden = true;
+      strokeError.textContent = `Couldn't load stroke data for "${ch}". Check your internet connection.`;
+      strokeError.hidden = false;
+      console.warn(err);
+    }
+  }
+
+  function openStrokeModal(text, startIndex = 0) {
+    const chars = Array.from(text).filter(isCJKChar);
+    if (!chars.length) return;
+    currentStrokeQueue = chars;
+    strokeModal.classList.add('open');
+    showStrokeForIndex(startIndex);
+  }
+
+  function closeStrokeModal() {
+    strokeModal.classList.remove('open');
+    clearSvg();
+    currentStrokeQueue = [];
+  }
+
+  strokeReplay.addEventListener('click', restartAnimation);
+  strokePrev.addEventListener('click', () => showStrokeForIndex(currentStrokeIndex - 1));
+  strokeNext.addEventListener('click', () => showStrokeForIndex(currentStrokeIndex + 1));
+  strokeClose.addEventListener('click', closeStrokeModal);
+  strokeModal.addEventListener('click', e => {
+    if (e.target === strokeModal) closeStrokeModal();
+  });
+  document.addEventListener('keydown', e => {
+    if (!strokeModal.classList.contains('open')) return;
+    if (e.key === 'Escape') closeStrokeModal();
+    else if (e.key === 'ArrowLeft' && !strokePrev.hidden && !strokePrev.disabled) showStrokeForIndex(currentStrokeIndex - 1);
+    else if (e.key === 'ArrowRight' && !strokeNext.hidden && !strokeNext.disabled) showStrokeForIndex(currentStrokeIndex + 1);
+    else if (e.key === ' ' || e.key === 'r' || e.key === 'R') { e.preventDefault(); restartAnimation(); }
+  });
+
   // ---------- State ----------
   const state = {
     level: 'all',
-    script: 'cn',  // 'cn' = Simplified, 'tw' = Traditional
-    queue: [],     // remaining word objects
-    index: 0,      // position in queue
+    script: 'cn',
+    queue: [],
+    index: 0,
     total: 0,
     known: [],
     unknown: [],
@@ -676,7 +991,6 @@
   });
   $('#start-btn').addEventListener('click', () => startRound());
 
-  // Home button — return to start, reset round state
   $('#home-btn').addEventListener('click', () => {
     if (synth && synth.speaking) synth.cancel();
     state.queue = [];
@@ -717,10 +1031,9 @@
   function renderDeck() {
     const deck = $('#deck');
     deck.innerHTML = '';
-    // Render up to 3 cards stacked, top-most last in DOM (so it overlays)
     const upcoming = state.queue.slice(state.index, state.index + 3);
     upcoming.slice().reverse().forEach((word, idxFromTop) => {
-      const depth = upcoming.length - 1 - idxFromTop; // 0 = top
+      const depth = upcoming.length - 1 - idxFromTop;
       const card = buildCard(word, depth === 0);
       const scale = 1 - depth * 0.04;
       const translateY = depth * 8;
@@ -738,39 +1051,56 @@
     }
   }
 
+  // Render hanzi as per-character spans; CJK chars get tappable styling +
+  // open the stroke modal positioned at that character.
+  function renderHanziChars(text) {
+    const chars = Array.from(text);
+    return chars.map((ch, idx) => {
+      if (isCJKChar(ch)) {
+        return `<span class="hanzi-char tappable" data-char-idx="${idx}">${escapeHtml(ch)}</span>`;
+      }
+      return `<span class="hanzi-char">${escapeHtml(ch)}</span>`;
+    }).join('');
+  }
+
   function buildCard(word, isTop) {
     const card = document.createElement('div');
     card.className = 'card front-hidden';
-    card.dataset.word = word[state.script] || word.tw || word.cn;
-    const aligned = (word.ex && word.exEn) ? alignExample(word.ex, word.exEn) : null;
+    const display = word[state.script] || word.tw || word.cn;
+    card.dataset.word = display;
+    const exampleText = (state.script === 'cn' && word['ex-cn']) ? word['ex-cn'] : word.ex;
+    const catText = (state.script === 'cn' && word['cat-cn']) ? word['cat-cn'] : (word.cat || '');
+    const aligned = (exampleText && word.exEn) ? alignExample(exampleText, word.exEn) : null;
     const hasPairs = aligned && aligned.cnTokens.some(t => t.pairId);
+    const hasCJK = Array.from(display).some(isCJKChar);
     card.innerHTML = `
       <div class="stamp left">KNOWN</div>
       <div class="stamp right">NEW</div>
       <div class="head">
-        <span>${escapeHtml(word.cat || '')}</span>
+        <span>${escapeHtml(catText)}</span>
         <span class="pos">${escapeHtml(word.pos || '')}</span>
       </div>
       <div class="word">
-        <div class="hanzi">
-          <span>${escapeHtml(word[state.script] || word.tw || word.cn)}</span>
-          <button class="speak-btn js-speak" data-text="${escapeAttr(word[state.script] || word.tw || word.cn)}" title="Listen" aria-label="Listen to word">🔊</button>
+        <div class="hanzi" data-hanzi="${escapeAttr(display)}">
+          ${renderHanziChars(display)}
+          <button class="speak-btn js-speak" data-text="${escapeAttr(display)}" title="Listen" aria-label="Listen to word">🔊</button>
         </div>
         <div class="pinyin">${escapeHtml(word.py || '')}</div>
+        ${hasCJK ? `<div class="stroke-hint">Tap a character to see stroke order ✏️</div>` : ''}
       </div>
       <div class="body">
         <div class="english">${escapeHtml(word.en || '')}</div>
-        ${word.ex ? `
+        ${exampleText ? `
           <div class="example-row">
-            <div class="example">${aligned ? renderTokens(aligned.cnTokens, 'cn') : escapeHtml(word.ex)}</div>
-            <button class="speak-btn speak-inline js-speak" data-text="${escapeAttr(word.ex)}" title="Listen" aria-label="Listen to example">🔊</button>
+            <div class="example">${aligned ? renderTokens(aligned.cnTokens, 'cn') : escapeHtml(exampleText)}</div>
+            <button class="speak-btn speak-inline js-speak" data-text="${escapeAttr(exampleText)}" title="Listen" aria-label="Listen to example">🔊</button>
           </div>` : ''}
         ${word.exEn ? `<div class="example-en">${aligned ? renderTokens(aligned.enTokens, 'en') : escapeHtml(word.exEn)}</div>` : ''}
         ${hasPairs ? `<div class="pair-hint">Tap an underlined word to see its translation</div>` : ''}
       </div>
       <div class="tap-hint show-when-hidden">Tap card to reveal meaning</div>
     `;
-    // Speak buttons — stop them from bubbling to flip/drag
+    // Speak buttons
     card.querySelectorAll('.js-speak').forEach(btn => {
       const stop = e => { e.stopPropagation(); };
       btn.addEventListener('pointerdown', stop);
@@ -781,7 +1111,27 @@
         speak(btn.dataset.text, btn);
       });
     });
-    // Pair highlight tokens — click toggles both partners
+    // Tappable hanzi characters — open stroke order modal
+    card.querySelectorAll('.hanzi-char.tappable').forEach(el => {
+      const stop = e => { e.stopPropagation(); };
+      el.addEventListener('pointerdown', stop);
+      el.addEventListener('pointermove', stop);
+      el.addEventListener('pointerup', stop);
+      el.addEventListener('click', e => {
+        e.stopPropagation();
+        if (card.dataset.dragged === '1') { card.dataset.dragged = ''; return; }
+        const charIdx = parseInt(el.dataset.charIdx, 10) || 0;
+        // Build queue from CJK chars only; map clicked index to its position in that subset
+        const allChars = Array.from(display);
+        const cjkChars = allChars.filter(isCJKChar);
+        const clickedChar = allChars[charIdx];
+        const startIndex = Math.max(0, cjkChars.indexOf(clickedChar));
+        currentStrokeQueue = cjkChars;
+        strokeModal.classList.add('open');
+        showStrokeForIndex(startIndex);
+      });
+    });
+    // Pair highlight tokens
     card.querySelectorAll('.tok.pair').forEach(tok => {
       const stop = e => { e.stopPropagation(); };
       tok.addEventListener('pointerdown', stop);
@@ -793,7 +1143,6 @@
         if (!pid) return;
         const partners = card.querySelectorAll(`.tok.pair[data-pair="${pid}"]`);
         const active = tok.classList.contains('highlight') || tok.classList.contains('highlight-en');
-        // Clear all highlights first
         card.querySelectorAll('.tok.highlight, .tok.highlight-en').forEach(el => {
           el.classList.remove('highlight', 'highlight-en');
         });
@@ -821,14 +1170,13 @@
   }
   function escapeAttr(s) { return escapeHtml(s); }
 
-  // ---------- Speech (Web Speech API — free, built into browser) ----------
+  // ---------- Speech ----------
   const synth = window.speechSynthesis;
   let zhVoice = null;
   function pickZhVoice() {
     if (!synth) return null;
     const voices = synth.getVoices();
     if (!voices.length) return null;
-    // Prefer zh-TW, fall back to any zh-* voice
     return voices.find(v => /zh[-_]TW/i.test(v.lang))
         || voices.find(v => /zh[-_]HK/i.test(v.lang))
         || voices.find(v => /^zh/i.test(v.lang))
@@ -908,7 +1256,6 @@
   }
 
   function flyOut(card, direction) {
-    // direction: -1 = left = known, +1 = right = unknown
     const word = state.queue[state.index];
     if (!word) return;
     if (direction < 0) state.known.push(word); else state.unknown.push(word);
