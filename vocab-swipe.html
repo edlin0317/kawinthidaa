@@ -24,6 +24,7 @@
     overflow: hidden;
     touch-action: none;
     position: relative;
+    isolation: isolate;
   }
   /* Wallpaper layer — sits behind everything, with a translucent gradient overlay
      so the existing UI colors and white text stay legible. */
@@ -36,13 +37,14 @@
     background-repeat: no-repeat;
     transition: opacity .6s ease;
     opacity: 1;
-    z-index: -2;
+    z-index: 0;
+    pointer-events: none;
   }
   body::after {
     content: "";
     position: fixed; inset: 0;
     background: linear-gradient(135deg, rgba(255,107,157,.55), rgba(108,92,231,.65));
-    z-index: -1;
+    z-index: 1;
     pointer-events: none;
   }
   .shuffle-btn {
@@ -65,6 +67,8 @@
     display: flex; flex-direction: column;
     max-width: 480px; margin: 0 auto;
     padding: env(safe-area-inset-top) 12px env(safe-area-inset-bottom);
+    position: relative;
+    z-index: 2;
   }
 
   /* ---------- Header ---------- */
@@ -440,28 +444,12 @@
 
 <script>
 (async () => {
-  let VOCAB;
-  try {
-    const res = await fetch('https://edlin0317.github.io/kawinthidaa/vocab-data.json', { cache: 'no-cache' });
-    if (!res.ok) throw new Error('HTTP ' + res.status);
-    VOCAB = await res.json();
-  } catch (err) {
-    const startP = document.querySelector('#start p');
-    if (startP) startP.innerHTML = 'Failed to load vocabulary data.<br>Please refresh the page.';
-    console.error('Failed to load vocab-data.json', err);
-    return;
-  }
-  const ROUND_SIZE = 30;
+  const ASSET_BASE_URL = new URL('.', window.location.href);
+  const assetUrl = path => new URL(path, ASSET_BASE_URL).href;
 
   // ---------- Wallpapers ----------
-  const WALLPAPER_BASE = 'https://edlin0317.github.io/kawinthidaa/wallpapers/';
+  const WALLPAPER_BASE = assetUrl('wallpapers/');
   let WALLPAPERS = [];
-  try {
-    const wres = await fetch('https://edlin0317.github.io/kawinthidaa/wallpapers.json', { cache: 'no-cache' });
-    if (wres.ok) WALLPAPERS = await wres.json();
-  } catch (e) {
-    console.warn('No wallpaper manifest — falling back to gradient', e);
-  }
   let currentWallpaper = null;
   function shuffleWallpaper() {
     if (!WALLPAPERS.length) return;
@@ -475,9 +463,32 @@
     currentWallpaper = next;
     document.body.style.setProperty('--wallpaper', `url("${WALLPAPER_BASE}${encodeURIComponent(next)}")`);
   }
-  shuffleWallpaper();
+
   const shuffleBtn = document.getElementById('shuffle-btn');
   if (shuffleBtn) shuffleBtn.addEventListener('click', shuffleWallpaper);
+
+  try {
+    const wres = await fetch(assetUrl('wallpapers.json'), { cache: 'no-cache' });
+    if (wres.ok) {
+      WALLPAPERS = await wres.json();
+      shuffleWallpaper();
+    }
+  } catch (e) {
+    console.warn('No wallpaper manifest; falling back to gradient', e);
+  }
+
+  let VOCAB;
+  try {
+    const res = await fetch(assetUrl('vocab-data.json'), { cache: 'no-cache' });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    VOCAB = await res.json();
+  } catch (err) {
+    const startP = document.querySelector('#start p');
+    if (startP) startP.innerHTML = 'Failed to load vocabulary data.<br>Please refresh the page.';
+    console.error('Failed to load vocab-data.json', err);
+    return;
+  }
+  const ROUND_SIZE = 30;
 
   // ---------- Dictionary for translation pair alignment ----------
   // Map: chinese token (tw or cn) -> { en: cleaned-meaning, full: original meaning }
