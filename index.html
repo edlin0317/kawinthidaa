@@ -295,6 +295,27 @@
     margin-top: 6px;
     font-size: 14px; color: #4b5563; line-height: 1.5;
   }
+  .example-block {
+    margin-top: 14px;
+    padding-top: 12px;
+    border-top: 1px dashed rgba(223,228,234,.6);
+  }
+  .example-block:first-of-type {
+    margin-top: 0;
+    padding-top: 0;
+    border-top: none;
+  }
+  .example-block .example { margin-top: 0; }
+  .meaning-tag {
+    display: inline-block;
+    font-size: 11px; font-weight: 600;
+    color: #6c5ce7;
+    background: rgba(108, 92, 231, .1);
+    padding: 2px 8px;
+    border-radius: 999px;
+    margin-bottom: 6px;
+    letter-spacing: .3px;
+  }
   .tok {
     border-radius: 4px;
     padding: 0 1px;
@@ -659,19 +680,31 @@
   const ROUND_SIZE = 30;
 
   // ---------- Dictionary for translation pair alignment ----------
+  // Compound words found in example sentences but not in the main vocabulary
+  // are loaded from vocab-data.json's `tokens` field. Edit that file to add more.
+  const SUPPLEMENT_DICT = (VOCAB && VOCAB.tokens) ? VOCAB.tokens : {};
+
   const DICT = (() => {
     const d = {};
-    const cleanEn = raw => {
+    const cleanOne = raw => {
       if (!raw) return '';
-      let s = String(raw).split(/[,;]/)[0].trim();
+      let s = String(raw).trim();
       s = s.replace(/^\(.*?\)\s*/g, '').trim();
+      s = s.replace(/\s*\(.*?\)\s*$/g, '').trim();
       s = s.replace(/^to\s+/i, '').trim();
       return s;
     };
+    const cleanAllEn = raw => {
+      if (!raw) return [];
+      // Split on , ; AND / so entries like "he/she, him/her" expand to four
+      // separate alternatives (he, she, him, her) instead of multi-word phrases
+      // that never match.
+      return String(raw).split(/[,;/]/).map(cleanOne).filter(Boolean);
+    };
     ['beginner','intermediate','advanced'].forEach(lvl => {
       VOCAB[lvl].forEach(w => {
-        const en = cleanEn(w.en);
-        if (!en) return;
+        const ens = cleanAllEn(w.en);
+        if (!ens.length) return;
         const candidates = new Set();
         [w.tw, w.cn].forEach(k => {
           if (!k) return;
@@ -684,9 +717,24 @@
           });
         });
         candidates.forEach(c => {
-          if (c && !d[c]) d[c] = { en };
+          if (!c) return;
+          if (!d[c]) d[c] = { ens: ens.slice() };
         });
       });
+    });
+    // Supplement entries take priority — prepend their alternatives so a
+    // hand-tuned translation like "非常 → very much" is tried before the
+    // dictionary's "specially, very, extremely".
+    Object.entries(SUPPLEMENT_DICT).forEach(([k, en]) => {
+      const newEns = cleanAllEn(en);
+      if (!newEns.length) return;
+      if (d[k]) {
+        const merged = newEns.slice();
+        d[k].ens.forEach(x => { if (!merged.includes(x)) merged.push(x); });
+        d[k].ens = merged;
+      } else {
+        d[k] = { ens: newEns };
+      }
     });
     return d;
   })();
@@ -705,7 +753,7 @@
       let matched = null;
       for (let len = Math.min(4, str.length - i); len >= 1; len--) {
         const sub = str.substr(i, len);
-        if (DICT[sub]) { matched = { text: sub, en: DICT[sub].en }; break; }
+        if (DICT[sub]) { matched = { text: sub, ens: DICT[sub].ens }; break; }
       }
       if (matched) { out.push({ type: 'word', ...matched }); i += matched.text.length; }
       else { out.push({ type: 'char', text: ch }); i += 1; }
@@ -713,31 +761,106 @@
     return out;
   }
 
-  function findEnglishMatch(meaning, enTokens, used) {
-    if (!meaning) return -1;
-    const stem = meaning.toLowerCase().replace(/[^a-z]/g, '');
-    if (stem.length < 2) return -1;
-    for (let i = 0; i < enTokens.length; i++) {
-      if (used.has(i) || enTokens[i].type !== 'word') continue;
-      const w = enTokens[i].text.toLowerCase().replace(/[^a-z]/g, '');
-      if (w === stem) { used.add(i); return i; }
+  // Returns an array of indices into enTokens that together represent the meaning.
+  // Tries the longest consecutive-word match first ("washing machine" → 2 tokens),
+  // falls back to shorter prefixes, then to single-word prefix matching.
+  // Pronoun aliases — a Chinese pronoun like 我 (en="I, me") should also match
+  // possessive forms like "my" / "mine" when the sentence drops 的, e.g.
+  // 他是我哥哥 → "He is my older brother".
+  const PRONOUN_ALIASES = {
+    'i':     ['i', 'me', 'my', 'mine'],
+    'me':    ['me', 'i', 'my', 'mine'],
+    'my':    ['my', 'mine', 'i', 'me'],
+    'mine':  ['mine', 'my', 'i', 'me'],
+    'we':    ['we', 'us', 'our', 'ours'],
+    'us':    ['us', 'we', 'our', 'ours'],
+    'our':   ['our', 'ours', 'we', 'us'],
+    'ours':  ['ours', 'our', 'we', 'us'],
+    'you':   ['you', 'your', 'yours'],
+    'your':  ['your', 'yours', 'you'],
+    'yours': ['yours', 'your', 'you'],
+    'he':    ['he', 'him', 'his'],
+    'him':   ['him', 'he', 'his'],
+    'his':   ['his', 'he', 'him'],
+    'she':   ['she', 'her', 'hers'],
+    'her':   ['her', 'she', 'hers'],
+    'hers':  ['hers', 'her', 'she'],
+    'they':  ['they', 'them', 'their', 'theirs'],
+    'them':  ['them', 'they', 'their', 'theirs'],
+    'their': ['their', 'theirs', 'they', 'them'],
+    'theirs':['theirs', 'their', 'they', 'them'],
+    'who':   ['who', 'whom'],
+    'whom':  ['whom', 'who'],
+  };
+  function wordsEqual(a, b) {
+    if (a === b) return true;
+    const aliases = PRONOUN_ALIASES[a];
+    return !!(aliases && aliases.includes(b));
+  }
+
+  function findEnglishMatch(meanings, enTokens, used) {
+    if (!meanings || !meanings.length) return [];
+    const list = Array.isArray(meanings) ? meanings : [meanings];
+
+    const tryConsecutive = (target) => {
+      for (let i = 0; i < enTokens.length; i++) {
+        if (used.has(i) || enTokens[i].type !== 'word') continue;
+        const matchedIndices = [];
+        let j = i;
+        let ok = true;
+        for (let k = 0; k < target.length; k++) {
+          while (j < enTokens.length && (enTokens[j].type !== 'word' || used.has(j))) j++;
+          if (j >= enTokens.length) { ok = false; break; }
+          const w = enTokens[j].text.toLowerCase().replace(/[^a-z]/g, '');
+          if (!wordsEqual(target[k], w)) { ok = false; break; }
+          matchedIndices.push(j);
+          j++;
+        }
+        if (ok) return matchedIndices;
+      }
+      return null;
+    };
+
+    // Pass 1: try each alternative meaning as a consecutive multi-word phrase.
+    // Try ONLY the full phrase (not leading subsets) — shortening "a lot" → "a"
+    // produces false positives where any sentence with "a" steals the pair.
+    // Single-letter words are filtered EXCEPT "i", which is the legitimate
+    // pronoun translation of 我.
+    for (const meaning of list) {
+      const words = meaning.toLowerCase().split(/[^a-z]+/).filter(Boolean);
+      if (!words.length) continue;
+      if (words.length === 1 && words[0].length < 2 && words[0] !== 'i') continue;
+      const hit = tryConsecutive(words);
+      if (hit) { hit.forEach(idx => used.add(idx)); return hit; }
     }
-    for (let i = 0; i < enTokens.length; i++) {
-      if (used.has(i) || enTokens[i].type !== 'word') continue;
-      const w = enTokens[i].text.toLowerCase().replace(/[^a-z]/g, '');
-      if (!w || w.length < 3) continue;
-      const minLen = Math.min(stem.length, w.length);
-      if (minLen < 3) continue;
-      const a = stem.slice(0, minLen);
-      const b = w.slice(0, minLen);
-      if (a === b) { used.add(i); return i; }
+
+    // Pass 2: prefix fallback (e.g. "study" → "studying"). Only for stems
+    // long enough to avoid spurious matches on short pronouns.
+    for (const meaning of list) {
+      const words = meaning.toLowerCase().split(/[^a-z]+/).filter(Boolean);
+      const stem = words.join('');
+      if (stem.length < 3) continue;
+      for (let i = 0; i < enTokens.length; i++) {
+        if (used.has(i) || enTokens[i].type !== 'word') continue;
+        const w = enTokens[i].text.toLowerCase().replace(/[^a-z]/g, '');
+        if (!w || w.length < 3) continue;
+        const minLen = Math.min(stem.length, w.length);
+        if (minLen < 3) continue;
+        if (stem.slice(0, minLen) === w.slice(0, minLen)) {
+          used.add(i);
+          return [i];
+        }
+      }
     }
-    return -1;
+    return [];
   }
 
   function tokenizeEnglish(str) {
     const out = [];
-    const re = /([A-Za-z']+)|(\s+|[^A-Za-z']+)/g;
+    // Split on apostrophes: "I'm" → "I" + "'" + "m" so "I" can pair with 我.
+    // "don't"/"let's" leave behind orphan "t"/"s" tokens that simply don't pair —
+    // harmless.
+    const re = /([A-Za-z]+)|(\s+|[^A-Za-z]+)/g;
     let m;
     while ((m = re.exec(str)) !== null) {
       if (m[1]) out.push({ type: 'word', text: m[1] });
@@ -754,21 +877,22 @@
     cnTokens.forEach(t => {
       if (t.type !== 'word') return;
       if (PAIR_SKIP.has(t.text)) return;
-      const idx = findEnglishMatch(t.en, enTokens, used);
-      if (idx >= 0) {
+      const indices = findEnglishMatch(t.ens, enTokens, used);
+      if (indices.length > 0) {
         nextId++;
         t.pairId = nextId;
-        enTokens[idx].pairId = nextId;
+        indices.forEach(idx => { enTokens[idx].pairId = nextId; });
       }
     });
     return { cnTokens, enTokens };
   }
 
-  function renderTokens(tokens, sideClass) {
+  function renderTokens(tokens, sideClass, pairPrefix) {
+    const prefix = pairPrefix == null ? '' : `${pairPrefix}-`;
     return tokens.map(t => {
       if (t.type !== 'word' && t.type !== 'char') return escapeHtml(t.text);
       const pair = t.pairId
-        ? ` data-pair="${t.pairId}" data-side="${sideClass}"`
+        ? ` data-pair="${prefix}${t.pairId}" data-side="${sideClass}"`
         : '';
       const cls = t.pairId ? 'tok pair' : 'tok';
       return `<span class="${cls}"${pair}>${escapeHtml(t.text)}</span>`;
@@ -1068,11 +1192,44 @@
     card.className = 'card front-hidden';
     const display = word[state.script] || word.tw || word.cn;
     card.dataset.word = display;
-    const exampleText = (state.script === 'cn' && word['ex-cn']) ? word['ex-cn'] : word.ex;
     const catText = (state.script === 'cn' && word['cat-cn']) ? word['cat-cn'] : (word.cat || '');
-    const aligned = (exampleText && word.exEn) ? alignExample(exampleText, word.exEn) : null;
-    const hasPairs = aligned && aligned.cnTokens.some(t => t.pairId);
     const hasCJK = Array.from(display).some(isCJKChar);
+
+    // Build all examples: primary (from ex/exEn) + extras
+    const allExamples = [];
+    if (word.ex || word['ex-cn']) {
+      allExamples.push({
+        ex: (state.script === 'cn' && word['ex-cn']) ? word['ex-cn'] : word.ex,
+        exEn: word.exEn || '',
+        meaning: '',
+      });
+    }
+    if (Array.isArray(word.extras)) {
+      word.extras.forEach(ex => {
+        allExamples.push({
+          ex: (state.script === 'cn' && ex['ex-cn']) ? ex['ex-cn'] : ex.ex,
+          exEn: ex.exEn || '',
+          meaning: ex.meaning || '',
+        });
+      });
+    }
+    let hasPairs = false;
+    const exampleBlocksHtml = allExamples.map((item, blockIdx) => {
+      const aligned = (item.ex && item.exEn) ? alignExample(item.ex, item.exEn) : null;
+      if (aligned && aligned.cnTokens.some(t => t.pairId)) hasPairs = true;
+      const cnHtml = aligned ? renderTokens(aligned.cnTokens, 'cn', blockIdx) : escapeHtml(item.ex || '');
+      const enHtml = aligned ? renderTokens(aligned.enTokens, 'en', blockIdx) : escapeHtml(item.exEn || '');
+      return `
+        <div class="example-block">
+          ${item.meaning ? `<div class="meaning-tag">${escapeHtml(item.meaning)}</div>` : ''}
+          ${item.ex ? `
+            <div class="example-row">
+              <div class="example">${cnHtml}</div>
+              <button class="speak-btn speak-inline js-speak" data-text="${escapeAttr(item.ex)}" title="Listen" aria-label="Listen to example">🔊</button>
+            </div>` : ''}
+          ${item.exEn ? `<div class="example-en">${enHtml}</div>` : ''}
+        </div>`;
+    }).join('');
     card.innerHTML = `
       <div class="stamp left">KNOWN</div>
       <div class="stamp right">NEW</div>
@@ -1090,12 +1247,7 @@
       </div>
       <div class="body">
         <div class="english">${escapeHtml(word.en || '')}</div>
-        ${exampleText ? `
-          <div class="example-row">
-            <div class="example">${aligned ? renderTokens(aligned.cnTokens, 'cn') : escapeHtml(exampleText)}</div>
-            <button class="speak-btn speak-inline js-speak" data-text="${escapeAttr(exampleText)}" title="Listen" aria-label="Listen to example">🔊</button>
-          </div>` : ''}
-        ${word.exEn ? `<div class="example-en">${aligned ? renderTokens(aligned.enTokens, 'en') : escapeHtml(word.exEn)}</div>` : ''}
+        ${exampleBlocksHtml}
         ${hasPairs ? `<div class="pair-hint">Tap an underlined word to see its translation</div>` : ''}
       </div>
       <div class="tap-hint show-when-hidden">Tap card to reveal meaning</div>
