@@ -1,0 +1,888 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+<title>Vocab Swipe — 中文詞彙學習</title>
+<style>
+  :root {
+    --bg-1: #ff6b9d;
+    --bg-2: #6c5ce7;
+    --known: #2ecc71;
+    --unknown: #ff5677;
+    --card-bg: #ffffff;
+    --text: #2d3436;
+    --muted: #636e72;
+    --shadow: 0 18px 50px rgba(0,0,0,.25);
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body {
+    margin: 0; padding: 0; height: 100%;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang TC", "Microsoft JhengHei", sans-serif;
+    color: var(--text);
+    background: linear-gradient(135deg, var(--bg-1), var(--bg-2));
+    overflow: hidden;
+    touch-action: none;
+  }
+  #app {
+    height: 100%;
+    display: flex; flex-direction: column;
+    max-width: 480px; margin: 0 auto;
+    padding: env(safe-area-inset-top) 12px env(safe-area-inset-bottom);
+  }
+
+  /* ---------- Header ---------- */
+  header {
+    color: white;
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 14px 6px 10px;
+  }
+  header .title { font-weight: 700; font-size: 18px; letter-spacing: .5px; }
+  header .progress { font-size: 14px; opacity: .9; font-variant-numeric: tabular-nums; }
+  .home-btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 34px; height: 34px;
+    border-radius: 50%;
+    border: 1.5px solid rgba(255,255,255,.5);
+    background: rgba(255,255,255,.15);
+    color: white;
+    font-size: 16px;
+    cursor: pointer;
+    margin-right: 8px;
+    transition: transform .12s, background .15s;
+    flex-shrink: 0;
+  }
+  .home-btn:hover { background: rgba(255,255,255,.28); }
+  .home-btn:active { transform: scale(.9); }
+  .home-btn[hidden] { display: none; }
+  .header-left { display: flex; align-items: center; }
+  /* ---------- Script toggle (start screen) ---------- */
+  .script-toggle {
+    display: inline-flex;
+    background: rgba(255,255,255,.15);
+    border: 1.5px solid rgba(255,255,255,.4);
+    border-radius: 999px;
+    padding: 4px;
+    margin: 0 auto 16px;
+    backdrop-filter: blur(6px);
+  }
+  .script-btn {
+    background: transparent;
+    border: none;
+    color: white;
+    padding: 8px 18px;
+    border-radius: 999px;
+    font-size: 14px; font-weight: 600;
+    cursor: pointer;
+    transition: background .15s, color .15s;
+  }
+  .script-btn.selected {
+    background: white;
+    color: #6c5ce7;
+  }
+  .script-label {
+    color: white; opacity: .85;
+    font-size: 13px;
+    margin-bottom: 6px;
+    text-align: center;
+  }
+
+  /* ---------- Screens ---------- */
+  .screen { flex: 1; display: none; flex-direction: column; }
+  .screen.active { display: flex; }
+
+  /* ---------- Start screen ---------- */
+  #start {
+    align-items: stretch; justify-content: center;
+    padding: 24px 16px;
+    color: white; text-align: center;
+  }
+  #start h1 { font-size: 32px; margin: 0 0 8px; }
+  #start p { opacity: .9; margin: 0 0 24px; line-height: 1.5; }
+  .level-grid {
+    display: grid; gap: 12px;
+    grid-template-columns: 1fr 1fr;
+    margin-bottom: 16px;
+  }
+  .level-grid .full { grid-column: 1 / -1; }
+  .level-btn {
+    background: rgba(255,255,255,.15);
+    border: 2px solid rgba(255,255,255,.4);
+    color: white;
+    padding: 16px 12px;
+    border-radius: 14px;
+    font-size: 16px; font-weight: 600;
+    cursor: pointer;
+    transition: transform .15s, background .15s;
+    backdrop-filter: blur(6px);
+  }
+  .level-btn small { display: block; font-weight: 400; font-size: 12px; opacity: .85; margin-top: 4px; }
+  .level-btn.selected, .level-btn:hover {
+    background: rgba(255,255,255,.32);
+    transform: translateY(-2px);
+  }
+  .start-cta {
+    margin-top: 8px;
+    background: white; color: #6c5ce7;
+    border: none; padding: 16px;
+    border-radius: 999px;
+    font-size: 17px; font-weight: 700;
+    cursor: pointer; box-shadow: var(--shadow);
+  }
+  .start-cta:disabled { opacity: .5; cursor: not-allowed; }
+  .hint { font-size: 13px; opacity: .85; margin-top: 14px; }
+
+  /* ---------- Deck ---------- */
+  #deck-screen { position: relative; }
+  .deck {
+    position: relative;
+    flex: 1;
+    margin: 8px 0;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .card {
+    position: absolute;
+    width: calc(100% - 8px);
+    height: 100%;
+    max-height: 560px;
+    background: var(--card-bg);
+    border-radius: 22px;
+    box-shadow: var(--shadow);
+    display: flex; flex-direction: column;
+    padding: 24px 22px;
+    cursor: grab;
+    user-select: none;
+    will-change: transform;
+    transition: transform .25s ease, opacity .25s ease;
+    overflow: hidden;
+  }
+  .card.dragging { transition: none; cursor: grabbing; }
+  .card .stamp {
+    position: absolute; top: 22px;
+    font-size: 28px; font-weight: 800;
+    padding: 6px 14px; border-radius: 8px;
+    border: 4px solid currentColor;
+    opacity: 0; transform: rotate(-12deg);
+    pointer-events: none; letter-spacing: 1px;
+  }
+  .card .stamp.left  { left: 22px; color: var(--known); }
+  .card .stamp.right { right: 22px; color: var(--unknown); transform: rotate(12deg); }
+
+  .card .head {
+    display: flex; justify-content: space-between; align-items: center;
+    color: var(--muted); font-size: 12px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: .5px;
+  }
+  .card .pos { background: #f1f2f6; padding: 3px 10px; border-radius: 10px; }
+  .card .word {
+    flex: 0 0 auto;
+    margin-top: 16px;
+    text-align: center;
+  }
+  .card .word .hanzi {
+    font-size: 64px; font-weight: 700;
+    line-height: 1.1; word-break: keep-all;
+    display: flex; align-items: center; justify-content: center; gap: 4px;
+  }
+  .card .word .pinyin {
+    margin-top: 10px; font-size: 22px; color: var(--muted); font-style: italic;
+  }
+  .speak-btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    border: 2px solid #dfe4ea;
+    background: #fafbfc;
+    color: var(--bg-2);
+    font-size: 16px;
+    cursor: pointer;
+    margin-left: 8px;
+    vertical-align: middle;
+    transition: transform .12s, background .15s;
+    flex-shrink: 0;
+  }
+  .speak-btn:hover { background: #eef0ff; }
+  .speak-btn:active { transform: scale(.9); }
+  .speak-btn.speaking { background: var(--bg-2); color: white; border-color: var(--bg-2); }
+  .speak-inline {
+    width: 28px; height: 28px; font-size: 13px; margin-left: 6px;
+  }
+  .example-row {
+    display: flex; align-items: flex-start; gap: 4px;
+  }
+  .example-row .example { flex: 1; }
+  .card .body {
+    flex: 1; margin-top: 18px;
+    overflow-y: auto;
+    transition: opacity .2s;
+  }
+  .card.front-hidden .body { opacity: 0; pointer-events: none; }
+  .card .english {
+    font-size: 19px; font-weight: 600; line-height: 1.4;
+    padding-bottom: 12px;
+    border-bottom: 1px dashed #dfe4ea;
+  }
+  .card .example {
+    margin-top: 12px;
+    font-size: 17px; line-height: 1.6;
+  }
+  .card .example-en {
+    margin-top: 6px;
+    font-size: 14px; color: var(--muted); line-height: 1.5;
+  }
+  .tok {
+    border-radius: 4px;
+    padding: 0 1px;
+    transition: background .15s, color .15s;
+  }
+  .tok.pair {
+    cursor: pointer;
+    border-bottom: 1px dotted #b2bec3;
+  }
+  .tok.pair:hover {
+    background: #f1f2f6;
+  }
+  .tok.highlight {
+    background: #ffeaa7;
+    color: #2d3436;
+    border-bottom-color: transparent;
+  }
+  .tok.highlight-en {
+    background: #fab1a0;
+    color: #2d3436;
+    border-bottom-color: transparent;
+  }
+  .pair-hint {
+    margin-top: 8px;
+    font-size: 11px; color: var(--muted); text-align: center;
+    opacity: .8;
+  }
+  .tap-hint {
+    margin-top: 14px;
+    text-align: center; font-size: 12px; color: var(--muted);
+    opacity: 0; transition: opacity .2s;
+  }
+  .card.front-hidden .tap-hint.show-when-hidden { opacity: 1; }
+
+  /* ---------- Action buttons ---------- */
+  .actions {
+    display: flex; justify-content: space-around; align-items: center;
+    padding: 12px 8px 18px;
+  }
+  .action-btn {
+    width: 64px; height: 64px;
+    border-radius: 50%;
+    border: none;
+    font-size: 28px;
+    cursor: pointer;
+    box-shadow: 0 6px 18px rgba(0,0,0,.18);
+    display: flex; align-items: center; justify-content: center;
+    background: white;
+    transition: transform .12s;
+  }
+  .action-btn:active { transform: scale(.92); }
+  .action-btn.known   { color: var(--known); }
+  .action-btn.unknown { color: var(--unknown); }
+  .action-btn.flip    { width: 52px; height: 52px; font-size: 22px; color: var(--bg-2); }
+
+  /* ---------- Summary ---------- */
+  #summary { padding: 16px 12px; color: white; overflow-y: auto; }
+  #summary h2 { margin: 8px 4px 4px; font-size: 26px; }
+  #summary .stats {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 10px; margin: 12px 0 18px;
+  }
+  #summary .stat {
+    background: rgba(255,255,255,.18);
+    border-radius: 14px; padding: 14px;
+    backdrop-filter: blur(6px);
+  }
+  #summary .stat .num { font-size: 30px; font-weight: 700; }
+  #summary .stat .lbl { font-size: 12px; opacity: .9; }
+  #summary .list {
+    background: white; color: var(--text);
+    border-radius: 16px; padding: 8px;
+    max-height: 50vh; overflow-y: auto;
+    box-shadow: var(--shadow);
+  }
+  #summary .item {
+    display: grid; grid-template-columns: auto 1fr auto;
+    gap: 10px; align-items: center;
+    padding: 10px 12px;
+    border-bottom: 1px solid #f1f2f6;
+  }
+  #summary .item:last-child { border-bottom: none; }
+  #summary .item .h { font-size: 22px; font-weight: 700; }
+  #summary .item .meta { font-size: 12px; color: var(--muted); }
+  #summary .item .en { grid-column: 2 / -1; font-size: 14px; color: var(--text); }
+  #summary .empty { padding: 24px; text-align: center; color: var(--muted); }
+  #summary .summary-actions {
+    display: flex; gap: 10px; margin-top: 16px;
+  }
+  #summary .summary-actions button {
+    flex: 1;
+    padding: 14px;
+    border-radius: 999px;
+    border: none;
+    font-size: 15px; font-weight: 700;
+    cursor: pointer;
+  }
+  #summary .summary-actions .primary { background: white; color: #6c5ce7; }
+  #summary .summary-actions .ghost { background: rgba(255,255,255,.2); color: white; border: 2px solid rgba(255,255,255,.5); }
+
+  /* ---------- Empty / loading ---------- */
+  .center-msg {
+    flex: 1; display: flex; align-items: center; justify-content: center;
+    color: white; text-align: center; padding: 24px; font-size: 16px;
+  }
+</style>
+</head>
+<body>
+
+<div id="app">
+  <header>
+    <div class="header-left">
+      <button class="home-btn" id="home-btn" hidden title="Back to home" aria-label="Back to home">🏠</button>
+      <div class="title">📚 Vocab Swipe</div>
+    </div>
+    <div class="progress" id="progress"></div>
+  </header>
+
+  <!-- START SCREEN -->
+  <section class="screen active" id="start">
+    <h1>Swipe to Learn</h1>
+    <p>← Swipe left if you <b>know it</b><br>
+       → Swipe right if it's <b>new to you</b><br>
+       Tap the card to flip for the meaning.</p>
+
+    <div class="script-label">Character set</div>
+    <div style="display:flex; justify-content:center;">
+      <div class="script-toggle">
+        <button class="script-btn selected" data-script="cn">简体 Simplified</button>
+        <button class="script-btn" data-script="tw">繁體 Traditional</button>
+      </div>
+    </div>
+
+    <div class="level-grid">
+      <button class="level-btn" data-level="beginner">Beginner<small>初級 · 464 字</small></button>
+      <button class="level-btn" data-level="intermediate">Intermediate<small>中級 · 377 字</small></button>
+      <button class="level-btn" data-level="advanced">Advanced<small>高級 · 356 字</small></button>
+      <button class="level-btn full selected" data-level="all">Mixed<small>混合所有等級</small></button>
+    </div>
+
+    <button class="start-cta" id="start-btn">Start Round (30 words)</button>
+    <div class="hint">Tip: you can also use the buttons below the card.</div>
+  </section>
+
+  <!-- DECK SCREEN -->
+  <section class="screen" id="deck-screen">
+    <div class="deck" id="deck"></div>
+    <div class="actions">
+      <button class="action-btn known"   id="btn-known"   title="I know this">✓</button>
+      <button class="action-btn flip"    id="btn-flip"    title="Flip card">⟳</button>
+      <button class="action-btn unknown" id="btn-unknown" title="New to me">✗</button>
+    </div>
+  </section>
+
+  <!-- SUMMARY SCREEN -->
+  <section class="screen" id="summary">
+    <h2>Round complete 🎉</h2>
+    <div class="stats">
+      <div class="stat"><div class="num" id="stat-known">0</div><div class="lbl">Known ✓</div></div>
+      <div class="stat"><div class="num" id="stat-unknown">0</div><div class="lbl">To Learn ✗</div></div>
+    </div>
+    <div style="font-weight:600;margin:0 4px 8px">Words to learn:</div>
+    <div class="list" id="unknown-list"></div>
+    <div class="summary-actions">
+      <button class="ghost" id="again-unknowns">Practice these again</button>
+      <button class="primary" id="new-round">New round</button>
+    </div>
+  </section>
+</div>
+
+
+<script>
+(async () => {
+  let VOCAB;
+  try {
+    const res = await fetch('vocab-data.json', { cache: 'no-cache' });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    VOCAB = await res.json();
+  } catch (err) {
+    const startP = document.querySelector('#start p');
+    if (startP) startP.innerHTML = 'Failed to load vocabulary data.<br>Please refresh the page.';
+    console.error('Failed to load vocab-data.json', err);
+    return;
+  }
+  const ROUND_SIZE = 30;
+
+  // ---------- Dictionary for translation pair alignment ----------
+  // Map: chinese token (tw or cn) -> { en: cleaned-meaning, full: original meaning }
+  const DICT = (() => {
+    const d = {};
+    const cleanEn = raw => {
+      if (!raw) return '';
+      // First comma/semicolon-separated chunk, drop leading parens, drop leading "to "
+      let s = String(raw).split(/[,;]/)[0].trim();
+      s = s.replace(/^\(.*?\)\s*/g, '').trim();
+      s = s.replace(/^to\s+/i, '').trim();
+      return s;
+    };
+    ['beginner','intermediate','advanced'].forEach(lvl => {
+      VOCAB[lvl].forEach(w => {
+        const en = cleanEn(w.en);
+        if (!en) return;
+        // Strip parenthetical/optional chars in keys: e.g. "外(面)" -> add both "外面" and "外"
+        const candidates = new Set();
+        [w.tw, w.cn].forEach(k => {
+          if (!k) return;
+          candidates.add(k);
+          // Remove parens content for one variant: 外(面) -> 外, plus full 外面
+          candidates.add(k.replace(/[\(（].*?[\)）]/g, ''));
+          candidates.add(k.replace(/[\(（]|[\)）]/g, ''));
+          // Split on slashes: 春/春天 -> 春 and 春天
+          k.split(/[\/／]/).forEach(part => {
+            const p = part.replace(/[\(（].*?[\)）]/g, '').replace(/[\(（]|[\)）]/g, '').trim();
+            if (p) candidates.add(p);
+          });
+        });
+        candidates.forEach(c => {
+          if (c && !d[c]) d[c] = { en };
+        });
+      });
+    });
+    return d;
+  })();
+
+  // Skip these as pair candidates — they pollute alignments
+  const PAIR_SKIP = new Set([
+    '的','了','嗎','呢','吧','呀','啊','嘛','喔','喲','著','過','在','是','把','被','也','都'
+  ]);
+  const PUNCT_RE = /[，。！？；：、,.!?;:"'""''「」『』（）()\s]/;
+
+  // Greedy longest-match Chinese tokenizer (max 4 chars)
+  function tokenizeChinese(str) {
+    const out = [];
+    let i = 0;
+    while (i < str.length) {
+      const ch = str[i];
+      if (PUNCT_RE.test(ch)) { out.push({ type: 'sep', text: ch }); i++; continue; }
+      let matched = null;
+      for (let len = Math.min(4, str.length - i); len >= 1; len--) {
+        const sub = str.substr(i, len);
+        if (DICT[sub]) { matched = { text: sub, en: DICT[sub].en }; break; }
+      }
+      if (matched) { out.push({ type: 'word', ...matched }); i += matched.text.length; }
+      else { out.push({ type: 'char', text: ch }); i += 1; }
+    }
+    return out;
+  }
+
+  // Find best matching English token index for a meaning string. Returns -1 if none.
+  function findEnglishMatch(meaning, enTokens, used) {
+    if (!meaning) return -1;
+    const stem = meaning.toLowerCase().replace(/[^a-z]/g, '');
+    if (stem.length < 2) return -1;
+    // First pass: exact word == stem
+    for (let i = 0; i < enTokens.length; i++) {
+      if (used.has(i) || enTokens[i].type !== 'word') continue;
+      const w = enTokens[i].text.toLowerCase().replace(/[^a-z]/g, '');
+      if (w === stem) { used.add(i); return i; }
+    }
+    // Second pass: stem-aware prefix match (>=4 chars or whole word)
+    for (let i = 0; i < enTokens.length; i++) {
+      if (used.has(i) || enTokens[i].type !== 'word') continue;
+      const w = enTokens[i].text.toLowerCase().replace(/[^a-z]/g, '');
+      if (!w || w.length < 3) continue;
+      const minLen = Math.min(stem.length, w.length);
+      if (minLen < 3) continue;
+      const a = stem.slice(0, minLen);
+      const b = w.slice(0, minLen);
+      if (a === b) { used.add(i); return i; }
+    }
+    return -1;
+  }
+
+  // Tokenize an English sentence into word/sep tokens.
+  function tokenizeEnglish(str) {
+    const out = [];
+    const re = /([A-Za-z']+)|(\s+|[^A-Za-z']+)/g;
+    let m;
+    while ((m = re.exec(str)) !== null) {
+      if (m[1]) out.push({ type: 'word', text: m[1] });
+      else out.push({ type: 'sep', text: m[2] });
+    }
+    return out;
+  }
+
+  // Align Chinese & English example sentences and assign pair IDs.
+  function alignExample(cnStr, enStr) {
+    const cnTokens = tokenizeChinese(cnStr || '');
+    const enTokens = tokenizeEnglish(enStr || '');
+    const used = new Set();
+    let nextId = 0;
+    cnTokens.forEach(t => {
+      if (t.type !== 'word') return;
+      if (PAIR_SKIP.has(t.text)) return;
+      const idx = findEnglishMatch(t.en, enTokens, used);
+      if (idx >= 0) {
+        nextId++;
+        t.pairId = nextId;
+        enTokens[idx].pairId = nextId;
+      }
+    });
+    return { cnTokens, enTokens };
+  }
+
+  function renderTokens(tokens, sideClass) {
+    return tokens.map(t => {
+      if (t.type !== 'word' && t.type !== 'char') return escapeHtml(t.text);
+      const pair = t.pairId
+        ? ` data-pair="${t.pairId}" data-side="${sideClass}"`
+        : '';
+      const cls = t.pairId ? 'tok pair' : 'tok';
+      return `<span class="${cls}"${pair}>${escapeHtml(t.text)}</span>`;
+    }).join('');
+  }
+
+  // ---------- State ----------
+  const state = {
+    level: 'all',
+    script: 'cn',  // 'cn' = Simplified, 'tw' = Traditional
+    queue: [],     // remaining word objects
+    index: 0,      // position in queue
+    total: 0,
+    known: [],
+    unknown: [],
+    activeCard: null,
+  };
+
+  // ---------- Helpers ----------
+  const $ = sel => document.querySelector(sel);
+  const screens = { start: $('#start'), deck: $('#deck-screen'), summary: $('#summary') };
+  function show(name) {
+    Object.values(screens).forEach(s => s.classList.remove('active'));
+    screens[name].classList.add('active');
+    const homeBtn = $('#home-btn');
+    if (homeBtn) homeBtn.hidden = (name === 'start');
+  }
+  function shuffle(arr) {
+    const a = arr.slice();
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }
+  function pickPool(level) {
+    if (level === 'all') {
+      return [...VOCAB.beginner, ...VOCAB.intermediate, ...VOCAB.advanced];
+    }
+    return VOCAB[level] || [];
+  }
+
+  // ---------- Start screen ----------
+  document.querySelectorAll('.level-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.level-btn').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+      state.level = btn.dataset.level;
+    });
+  });
+  document.querySelectorAll('.script-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.script-btn').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+      state.script = btn.dataset.script;
+    });
+  });
+  $('#start-btn').addEventListener('click', () => startRound());
+
+  // Home button — return to start, reset round state
+  $('#home-btn').addEventListener('click', () => {
+    if (synth && synth.speaking) synth.cancel();
+    state.queue = [];
+    state.index = 0;
+    state.total = 0;
+    state.known = [];
+    state.unknown = [];
+    state.activeCard = null;
+    $('#deck').innerHTML = '';
+    $('#progress').textContent = '';
+    show('start');
+  });
+
+  function startRound(customPool) {
+    const pool = customPool || pickPool(state.level);
+    if (!pool.length) return;
+    state.queue = shuffle(pool).slice(0, Math.min(ROUND_SIZE, pool.length));
+    state.total = state.queue.length;
+    state.index = 0;
+    state.known = [];
+    state.unknown = [];
+    show('deck');
+    renderDeck();
+    updateProgress();
+  }
+
+  function updateProgress() {
+    const remaining = state.queue.length - state.index;
+    if (remaining > 0) {
+      $('#progress').textContent = `${state.index + 1} / ${state.total}`;
+    } else {
+      $('#progress').textContent = '';
+    }
+  }
+
+  // ---------- Deck rendering ----------
+  function renderDeck() {
+    const deck = $('#deck');
+    deck.innerHTML = '';
+    // Render up to 3 cards stacked, top-most last in DOM (so it overlays)
+    const upcoming = state.queue.slice(state.index, state.index + 3);
+    upcoming.slice().reverse().forEach((word, idxFromTop) => {
+      const depth = upcoming.length - 1 - idxFromTop; // 0 = top
+      const card = buildCard(word, depth === 0);
+      const scale = 1 - depth * 0.04;
+      const translateY = depth * 8;
+      card.style.transform = `translateY(${translateY}px) scale(${scale})`;
+      card.style.zIndex = 100 - depth;
+      card.style.opacity = depth >= 2 ? .7 : 1;
+      deck.appendChild(card);
+      if (depth === 0) {
+        state.activeCard = card;
+        attachGestures(card);
+      }
+    });
+    if (upcoming.length === 0) {
+      finishRound();
+    }
+  }
+
+  function buildCard(word, isTop) {
+    const card = document.createElement('div');
+    card.className = 'card front-hidden';
+    card.dataset.word = word[state.script] || word.tw || word.cn;
+    const aligned = (word.ex && word.exEn) ? alignExample(word.ex, word.exEn) : null;
+    const hasPairs = aligned && aligned.cnTokens.some(t => t.pairId);
+    card.innerHTML = `
+      <div class="stamp left">KNOWN</div>
+      <div class="stamp right">NEW</div>
+      <div class="head">
+        <span>${escapeHtml(word.cat || '')}</span>
+        <span class="pos">${escapeHtml(word.pos || '')}</span>
+      </div>
+      <div class="word">
+        <div class="hanzi">
+          <span>${escapeHtml(word[state.script] || word.tw || word.cn)}</span>
+          <button class="speak-btn js-speak" data-text="${escapeAttr(word[state.script] || word.tw || word.cn)}" title="Listen" aria-label="Listen to word">🔊</button>
+        </div>
+        <div class="pinyin">${escapeHtml(word.py || '')}</div>
+      </div>
+      <div class="body">
+        <div class="english">${escapeHtml(word.en || '')}</div>
+        ${word.ex ? `
+          <div class="example-row">
+            <div class="example">${aligned ? renderTokens(aligned.cnTokens, 'cn') : escapeHtml(word.ex)}</div>
+            <button class="speak-btn speak-inline js-speak" data-text="${escapeAttr(word.ex)}" title="Listen" aria-label="Listen to example">🔊</button>
+          </div>` : ''}
+        ${word.exEn ? `<div class="example-en">${aligned ? renderTokens(aligned.enTokens, 'en') : escapeHtml(word.exEn)}</div>` : ''}
+        ${hasPairs ? `<div class="pair-hint">Tap an underlined word to see its translation</div>` : ''}
+      </div>
+      <div class="tap-hint show-when-hidden">Tap card to reveal meaning</div>
+    `;
+    // Speak buttons — stop them from bubbling to flip/drag
+    card.querySelectorAll('.js-speak').forEach(btn => {
+      const stop = e => { e.stopPropagation(); };
+      btn.addEventListener('pointerdown', stop);
+      btn.addEventListener('pointermove', stop);
+      btn.addEventListener('pointerup', stop);
+      btn.addEventListener('click', e => {
+        e.stopPropagation();
+        speak(btn.dataset.text, btn);
+      });
+    });
+    // Pair highlight tokens — click toggles both partners
+    card.querySelectorAll('.tok.pair').forEach(tok => {
+      const stop = e => { e.stopPropagation(); };
+      tok.addEventListener('pointerdown', stop);
+      tok.addEventListener('pointermove', stop);
+      tok.addEventListener('pointerup', stop);
+      tok.addEventListener('click', e => {
+        e.stopPropagation();
+        const pid = tok.dataset.pair;
+        if (!pid) return;
+        const partners = card.querySelectorAll(`.tok.pair[data-pair="${pid}"]`);
+        const active = tok.classList.contains('highlight') || tok.classList.contains('highlight-en');
+        // Clear all highlights first
+        card.querySelectorAll('.tok.highlight, .tok.highlight-en').forEach(el => {
+          el.classList.remove('highlight', 'highlight-en');
+        });
+        if (!active) {
+          partners.forEach(el => {
+            const cls = el.dataset.side === 'en' ? 'highlight-en' : 'highlight';
+            el.classList.add(cls);
+          });
+        }
+      });
+    });
+    if (isTop) {
+      card.addEventListener('click', e => {
+        if (card.dataset.dragged === '1') { card.dataset.dragged = ''; return; }
+        card.classList.toggle('front-hidden');
+      });
+    }
+    return card;
+  }
+
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, c => ({
+      '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+    }[c]));
+  }
+  function escapeAttr(s) { return escapeHtml(s); }
+
+  // ---------- Speech (Web Speech API — free, built into browser) ----------
+  const synth = window.speechSynthesis;
+  let zhVoice = null;
+  function pickZhVoice() {
+    if (!synth) return null;
+    const voices = synth.getVoices();
+    if (!voices.length) return null;
+    // Prefer zh-TW, fall back to any zh-* voice
+    return voices.find(v => /zh[-_]TW/i.test(v.lang))
+        || voices.find(v => /zh[-_]HK/i.test(v.lang))
+        || voices.find(v => /^zh/i.test(v.lang))
+        || null;
+  }
+  if (synth) {
+    zhVoice = pickZhVoice();
+    synth.onvoiceschanged = () => { zhVoice = pickZhVoice(); };
+  }
+  function speak(text, btn) {
+    if (!synth) {
+      alert('Sorry, your browser doesn\'t support speech. Try Chrome, Edge, or Safari.');
+      return;
+    }
+    synth.cancel();
+    document.querySelectorAll('.speak-btn.speaking').forEach(b => b.classList.remove('speaking'));
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = (zhVoice && zhVoice.lang) || 'zh-TW';
+    if (zhVoice) u.voice = zhVoice;
+    u.rate = 0.9;
+    u.pitch = 1;
+    if (btn) {
+      btn.classList.add('speaking');
+      u.onend = u.onerror = () => btn.classList.remove('speaking');
+    }
+    synth.speak(u);
+  }
+
+  // ---------- Gestures ----------
+  function attachGestures(card) {
+    let startX = 0, startY = 0, dx = 0, dy = 0, dragging = false, pointerId = null;
+
+    const stampL = card.querySelector('.stamp.left');
+    const stampR = card.querySelector('.stamp.right');
+
+    const onDown = e => {
+      if (e.button !== undefined && e.button !== 0) return;
+      pointerId = e.pointerId;
+      card.setPointerCapture && card.setPointerCapture(pointerId);
+      startX = e.clientX; startY = e.clientY;
+      dx = 0; dy = 0;
+      dragging = true;
+      card.classList.add('dragging');
+    };
+    const onMove = e => {
+      if (!dragging) return;
+      dx = e.clientX - startX;
+      dy = e.clientY - startY;
+      const rot = dx * 0.08;
+      card.style.transform = `translate(${dx}px, ${dy}px) rotate(${rot}deg)`;
+      const ratio = Math.min(Math.abs(dx) / 120, 1);
+      if (dx < 0) { stampL.style.opacity = ratio; stampR.style.opacity = 0; }
+      else if (dx > 0) { stampR.style.opacity = ratio; stampL.style.opacity = 0; }
+      else { stampL.style.opacity = stampR.style.opacity = 0; }
+    };
+    const onUp = e => {
+      if (!dragging) return;
+      dragging = false;
+      card.classList.remove('dragging');
+      const threshold = 110;
+      if (Math.abs(dx) > 10) card.dataset.dragged = '1';
+      if (dx <= -threshold) {
+        flyOut(card, -1);
+      } else if (dx >= threshold) {
+        flyOut(card, +1);
+      } else {
+        card.style.transform = '';
+        stampL.style.opacity = stampR.style.opacity = 0;
+      }
+    };
+
+    card.addEventListener('pointerdown', onDown);
+    card.addEventListener('pointermove', onMove);
+    card.addEventListener('pointerup', onUp);
+    card.addEventListener('pointercancel', onUp);
+    card.addEventListener('pointerleave', e => { if (dragging) onUp(e); });
+  }
+
+  function flyOut(card, direction) {
+    // direction: -1 = left = known, +1 = right = unknown
+    const word = state.queue[state.index];
+    if (!word) return;
+    if (direction < 0) state.known.push(word); else state.unknown.push(word);
+
+    const off = direction * (window.innerWidth + 200);
+    card.style.transition = 'transform .35s ease, opacity .35s ease';
+    card.style.transform = `translate(${off}px, 60px) rotate(${direction * 25}deg)`;
+    card.style.opacity = 0;
+
+    state.index += 1;
+    setTimeout(() => {
+      renderDeck();
+      updateProgress();
+    }, 280);
+  }
+
+  // ---------- Action buttons ----------
+  $('#btn-known').addEventListener('click', () => {
+    if (state.activeCard) flyOut(state.activeCard, -1);
+  });
+  $('#btn-unknown').addEventListener('click', () => {
+    if (state.activeCard) flyOut(state.activeCard, +1);
+  });
+  $('#btn-flip').addEventListener('click', () => {
+    if (state.activeCard) state.activeCard.classList.toggle('front-hidden');
+  });
+
+  // ---------- Summary ----------
+  function finishRound() {
+    show('summary');
+    $('#stat-known').textContent = state.known.length;
+    $('#stat-unknown').textContent = state.unknown.length;
+    const list = $('#unknown-list');
+    if (!state.unknown.length) {
+      list.innerHTML = `<div class="empty">All known! Great job 🌟</div>`;
+    } else {
+      list.innerHTML = state.unknown.map(w => `
+        <div class="item">
+          <div class="h">${escapeHtml(w[state.script] || w.tw || w.cn)}</div>
+          <div class="meta">${escapeHtml(w.py || '')} · ${escapeHtml(w.pos || '')}</div>
+          <div class="en">${escapeHtml(w.en || '')}</div>
+        </div>`).join('');
+    }
+    $('#progress').textContent = '';
+  }
+
+  $('#new-round').addEventListener('click', () => show('start'));
+  $('#again-unknowns').addEventListener('click', () => {
+    if (!state.unknown.length) { show('start'); return; }
+    startRound(state.unknown.slice());
+  });
+
+})();
+</script>
+</body>
+</html>
