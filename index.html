@@ -304,16 +304,16 @@
     cursor: pointer;
     border-bottom: 1px dotted #b2bec3;
   }
-  .tok.pair:hover {
+  .tok.pair:not(.highlight):not(.highlight-en):hover {
     background: #f1f2f6;
   }
-  .tok.highlight {
-    background: #ffeaa7;
+  .tok.pair.highlight {
+    background: #ffeaa7 !important;
     color: #2d3436;
     border-bottom-color: transparent;
   }
-  .tok.highlight-en {
-    background: #fab1a0;
+  .tok.pair.highlight-en {
+    background: #fab1a0 !important;
     color: #2d3436;
     border-bottom-color: transparent;
   }
@@ -1102,24 +1102,17 @@
     `;
     // Speak buttons
     card.querySelectorAll('.js-speak').forEach(btn => {
-      const stop = e => { e.stopPropagation(); };
-      btn.addEventListener('pointerdown', stop);
-      btn.addEventListener('pointermove', stop);
-      btn.addEventListener('pointerup', stop);
       btn.addEventListener('click', e => {
+        if (card.dataset.dragged === '1') { card.dataset.dragged = ''; return; }
         e.stopPropagation();
         speak(btn.dataset.text, btn);
       });
     });
     // Tappable hanzi characters — open stroke order modal
     card.querySelectorAll('.hanzi-char.tappable').forEach(el => {
-      const stop = e => { e.stopPropagation(); };
-      el.addEventListener('pointerdown', stop);
-      el.addEventListener('pointermove', stop);
-      el.addEventListener('pointerup', stop);
       el.addEventListener('click', e => {
-        e.stopPropagation();
         if (card.dataset.dragged === '1') { card.dataset.dragged = ''; return; }
+        e.stopPropagation();
         const charIdx = parseInt(el.dataset.charIdx, 10) || 0;
         // Build queue from CJK chars only; map clicked index to its position in that subset
         const allChars = Array.from(display);
@@ -1133,11 +1126,8 @@
     });
     // Pair highlight tokens
     card.querySelectorAll('.tok.pair').forEach(tok => {
-      const stop = e => { e.stopPropagation(); };
-      tok.addEventListener('pointerdown', stop);
-      tok.addEventListener('pointermove', stop);
-      tok.addEventListener('pointerup', stop);
       tok.addEventListener('click', e => {
+        if (card.dataset.dragged === '1') { card.dataset.dragged = ''; return; }
         e.stopPropagation();
         const pid = tok.dataset.pair;
         if (!pid) return;
@@ -1207,7 +1197,9 @@
 
   // ---------- Gestures ----------
   function attachGestures(card) {
-    let startX = 0, startY = 0, dx = 0, dy = 0, dragging = false, pointerId = null;
+    let startX = 0, startY = 0, dx = 0, dy = 0;
+    let tracking = false, dragging = false, pointerId = null;
+    const DRAG_THRESHOLD = 8;
 
     const stampL = card.querySelector('.stamp.left');
     const stampR = card.querySelector('.stamp.right');
@@ -1215,16 +1207,24 @@
     const onDown = e => {
       if (e.button !== undefined && e.button !== 0) return;
       pointerId = e.pointerId;
-      card.setPointerCapture && card.setPointerCapture(pointerId);
       startX = e.clientX; startY = e.clientY;
       dx = 0; dy = 0;
-      dragging = true;
-      card.classList.add('dragging');
+      tracking = true;
+      dragging = false;
     };
     const onMove = e => {
-      if (!dragging) return;
+      if (!tracking || e.pointerId !== pointerId) return;
       dx = e.clientX - startX;
       dy = e.clientY - startY;
+      if (!dragging) {
+        if (Math.abs(dx) < DRAG_THRESHOLD && Math.abs(dy) < DRAG_THRESHOLD) return;
+        // Only start dragging if movement is mostly horizontal — vertical
+        // movement should let the example body scroll normally.
+        if (Math.abs(dy) > Math.abs(dx) * 1.2) { tracking = false; return; }
+        dragging = true;
+        card.classList.add('dragging');
+        card.setPointerCapture && card.setPointerCapture(pointerId);
+      }
       const rot = dx * 0.08;
       card.style.transform = `translate(${dx}px, ${dy}px) rotate(${rot}deg)`;
       const ratio = Math.min(Math.abs(dx) / 120, 1);
@@ -1233,7 +1233,9 @@
       else { stampL.style.opacity = stampR.style.opacity = 0; }
     };
     const onUp = e => {
-      if (!dragging) return;
+      if (!tracking) return;
+      tracking = false;
+      if (!dragging) { pointerId = null; return; }
       dragging = false;
       card.classList.remove('dragging');
       const threshold = 110;
@@ -1246,13 +1248,13 @@
         card.style.transform = '';
         stampL.style.opacity = stampR.style.opacity = 0;
       }
+      pointerId = null;
     };
 
     card.addEventListener('pointerdown', onDown);
     card.addEventListener('pointermove', onMove);
     card.addEventListener('pointerup', onUp);
     card.addEventListener('pointercancel', onUp);
-    card.addEventListener('pointerleave', e => { if (dragging) onUp(e); });
   }
 
   function flyOut(card, direction) {
