@@ -465,12 +465,10 @@
     inset: 6%;
     border-radius: 12px;
     background:
-      linear-gradient(to right, transparent calc(50% - 0.5px), rgba(140,90,60,0.18) calc(50% - 0.5px), rgba(140,90,60,0.18) calc(50% + 0.5px), transparent calc(50% + 0.5px)),
-      linear-gradient(to bottom, transparent calc(50% - 0.5px), rgba(140,90,60,0.18) calc(50% - 0.5px), rgba(140,90,60,0.18) calc(50% + 0.5px), transparent calc(50% + 0.5px)),
-      linear-gradient(to right, transparent calc(33.333% - 0.5px), rgba(140,90,60,0.10) calc(33.333% - 0.5px), rgba(140,90,60,0.10) calc(33.333% + 0.5px), transparent calc(33.333% + 0.5px)),
-      linear-gradient(to right, transparent calc(66.666% - 0.5px), rgba(140,90,60,0.10) calc(66.666% - 0.5px), rgba(140,90,60,0.10) calc(66.666% + 0.5px), transparent calc(66.666% + 0.5px)),
-      linear-gradient(to bottom, transparent calc(33.333% - 0.5px), rgba(140,90,60,0.10) calc(33.333% - 0.5px), rgba(140,90,60,0.10) calc(33.333% + 0.5px), transparent calc(33.333% + 0.5px)),
-      linear-gradient(to bottom, transparent calc(66.666% - 0.5px), rgba(140,90,60,0.10) calc(66.666% - 0.5px), rgba(140,90,60,0.10) calc(66.666% + 0.5px), transparent calc(66.666% + 0.5px));
+      linear-gradient(to right, transparent calc(33.333% - 0.5px), rgba(140,90,60,0.18) calc(33.333% - 0.5px), rgba(140,90,60,0.18) calc(33.333% + 0.5px), transparent calc(33.333% + 0.5px)),
+      linear-gradient(to right, transparent calc(66.666% - 0.5px), rgba(140,90,60,0.18) calc(66.666% - 0.5px), rgba(140,90,60,0.18) calc(66.666% + 0.5px), transparent calc(66.666% + 0.5px)),
+      linear-gradient(to bottom, transparent calc(33.333% - 0.5px), rgba(140,90,60,0.18) calc(33.333% - 0.5px), rgba(140,90,60,0.18) calc(33.333% + 0.5px), transparent calc(33.333% + 0.5px)),
+      linear-gradient(to bottom, transparent calc(66.666% - 0.5px), rgba(140,90,60,0.18) calc(66.666% - 0.5px), rgba(140,90,60,0.18) calc(66.666% + 0.5px), transparent calc(66.666% + 0.5px));
     border: 1px dashed rgba(43, 34, 29, .2);
   }
   .stroke-glyph {
@@ -840,7 +838,7 @@
     const SVG_NS = 'http://www.w3.org/2000/svg';
     // Frame transform mirrors the demo: shift + flip (hanzi-writer-data uses cartesian Y-up)
     const frame = document.createElementNS(SVG_NS, 'g');
-    frame.setAttribute('transform', 'translate(30 20)');
+    frame.setAttribute('transform', 'translate(30 -50)');
     strokeSvg.appendChild(frame);
     const group = document.createElementNS(SVG_NS, 'g');
     group.setAttribute('transform', 'translate(0 1024) scale(0.95 -0.95)');
