@@ -1,0 +1,1316 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+<title>Vocab Swipe — 中文詞彙學習</title>
+<style>
+  :root {
+    --bg-1: #ff6b9d;
+    --bg-2: #6c5ce7;
+    --known: #2ecc71;
+    --unknown: #ff5677;
+    --card-bg: rgba(255,255,255,.52);
+    --text: #2d3436;
+    --muted: #636e72;
+    --shadow: 0 18px 50px rgba(0,0,0,.25);
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body {
+    margin: 0; padding: 0; height: 100%;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang TC", "Microsoft JhengHei", sans-serif;
+    color: var(--text);
+    background: linear-gradient(135deg, var(--bg-1), var(--bg-2));
+    overflow: hidden;
+    touch-action: none;
+    position: relative;
+    isolation: isolate;
+  }
+  body::before {
+    content: "";
+    position: fixed; inset: 0;
+    background-image: var(--wallpaper, none);
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    transition: opacity .6s ease;
+    opacity: 1;
+    z-index: 0;
+    pointer-events: none;
+  }
+  body::after {
+    content: "";
+    position: fixed; inset: 0;
+    background: linear-gradient(135deg, rgba(255,107,157,.38), rgba(108,92,231,.46));
+    z-index: 1;
+    pointer-events: none;
+  }
+  .shuffle-btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 34px; height: 34px;
+    border-radius: 50%;
+    border: 1.5px solid rgba(255,255,255,.5);
+    background: rgba(255,255,255,.15);
+    color: white;
+    font-size: 16px;
+    cursor: pointer;
+    margin-left: 8px;
+    transition: transform .12s, background .15s;
+    flex-shrink: 0;
+  }
+  .shuffle-btn:hover { background: rgba(255,255,255,.28); }
+  .shuffle-btn:active { transform: rotate(180deg) scale(.9); }
+  #app {
+    height: 100%;
+    display: flex; flex-direction: column;
+    max-width: 480px; margin: 0 auto;
+    padding: env(safe-area-inset-top) 12px env(safe-area-inset-bottom);
+    position: relative;
+    z-index: 2;
+  }
+
+  /* ---------- Header ---------- */
+  header {
+    color: white;
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 14px 6px 10px;
+  }
+  header .title { font-weight: 700; font-size: 18px; letter-spacing: .5px; }
+  header .progress { font-size: 14px; opacity: .9; font-variant-numeric: tabular-nums; }
+  .home-btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 34px; height: 34px;
+    border-radius: 50%;
+    border: 1.5px solid rgba(255,255,255,.5);
+    background: rgba(255,255,255,.15);
+    color: white;
+    font-size: 16px;
+    cursor: pointer;
+    margin-right: 8px;
+    transition: transform .12s, background .15s;
+    flex-shrink: 0;
+  }
+  .home-btn:hover { background: rgba(255,255,255,.28); }
+  .home-btn:active { transform: scale(.9); }
+  .home-btn[hidden] { display: none; }
+  .header-left { display: flex; align-items: center; }
+  /* ---------- Script toggle (start screen) ---------- */
+  .script-toggle {
+    display: inline-flex;
+    background: rgba(255,255,255,.15);
+    border: 1.5px solid rgba(255,255,255,.4);
+    border-radius: 999px;
+    padding: 4px;
+    margin: 0 auto 16px;
+    backdrop-filter: blur(6px);
+  }
+  .script-btn {
+    background: transparent;
+    border: none;
+    color: white;
+    padding: 8px 18px;
+    border-radius: 999px;
+    font-size: 14px; font-weight: 600;
+    cursor: pointer;
+    transition: background .15s, color .15s;
+  }
+  .script-btn.selected {
+    background: white;
+    color: #6c5ce7;
+  }
+  .script-label {
+    color: white; opacity: .85;
+    font-size: 13px;
+    margin-bottom: 6px;
+    text-align: center;
+  }
+
+  /* ---------- Screens ---------- */
+  .screen { flex: 1; display: none; flex-direction: column; }
+  .screen.active { display: flex; }
+
+  /* ---------- Start screen ---------- */
+  #start {
+    align-items: stretch; justify-content: center;
+    padding: 24px 16px;
+    color: white; text-align: center;
+  }
+  #start h1 { font-size: 32px; margin: 0 0 8px; }
+  #start p { opacity: .9; margin: 0 0 24px; line-height: 1.5; }
+  .level-grid {
+    display: grid; gap: 12px;
+    grid-template-columns: 1fr 1fr;
+    margin-bottom: 16px;
+  }
+  .level-grid .full { grid-column: 1 / -1; }
+  .level-btn {
+    background: rgba(255,255,255,.15);
+    border: 2px solid rgba(255,255,255,.4);
+    color: white;
+    padding: 16px 12px;
+    border-radius: 14px;
+    font-size: 16px; font-weight: 600;
+    cursor: pointer;
+    transition: transform .15s, background .15s;
+    backdrop-filter: blur(6px);
+  }
+  .level-btn small { display: block; font-weight: 400; font-size: 12px; opacity: .85; margin-top: 4px; }
+  .level-btn.selected, .level-btn:hover {
+    background: rgba(255,255,255,.32);
+    transform: translateY(-2px);
+  }
+  .start-cta {
+    margin-top: 8px;
+    background: white; color: #6c5ce7;
+    border: none; padding: 16px;
+    border-radius: 999px;
+    font-size: 17px; font-weight: 700;
+    cursor: pointer; box-shadow: var(--shadow);
+  }
+  .start-cta:disabled { opacity: .5; cursor: not-allowed; }
+  .hint { font-size: 13px; opacity: .85; margin-top: 14px; }
+
+  /* ---------- Deck ---------- */
+  #deck-screen { position: relative; }
+  .deck {
+    position: relative;
+    flex: 1;
+    margin: 8px 0 14px;
+    padding: 12px 0 18px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .card {
+    position: absolute;
+    width: calc(100% - 28px);
+    height: calc(100% - 30px);
+    max-height: 560px;
+    background: linear-gradient(180deg, rgba(255,255,255,.62), rgba(255,255,255,.40));
+    border: 1px solid rgba(255,255,255,.45);
+    backdrop-filter: blur(18px) saturate(1.15);
+    border-radius: 22px;
+    box-shadow: var(--shadow);
+    color: #1f2937;
+    display: flex; flex-direction: column;
+    padding: 24px 22px;
+    cursor: grab;
+    user-select: none;
+    will-change: transform;
+    transition: transform .25s ease, opacity .25s ease;
+    overflow: hidden;
+  }
+  .card.dragging { transition: none; cursor: grabbing; }
+  .card .stamp {
+    position: absolute; top: 22px;
+    font-size: 28px; font-weight: 800;
+    padding: 6px 14px; border-radius: 8px;
+    border: 4px solid currentColor;
+    opacity: 0; transform: rotate(-12deg);
+    pointer-events: none; letter-spacing: 1px;
+  }
+  .card .stamp.left  { left: 22px; color: var(--known); }
+  .card .stamp.right { right: 22px; color: var(--unknown); transform: rotate(12deg); }
+
+  .card .head {
+    display: flex; justify-content: space-between; align-items: center;
+    color: #374151; font-size: 12px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: .5px;
+  }
+  .card .pos { background: rgba(241,242,246,.72); padding: 3px 10px; border-radius: 10px; }
+  .card .word {
+    flex: 0 0 auto;
+    margin-top: 16px;
+    text-align: center;
+  }
+  .card .word .hanzi {
+    font-size: 64px; font-weight: 700;
+    line-height: 1.1; word-break: keep-all;
+    display: flex; align-items: center; justify-content: center; gap: 4px;
+    flex-wrap: wrap;
+  }
+  .hanzi-char {
+    cursor: pointer;
+    border-radius: 6px;
+    padding: 0 4px;
+    transition: background .15s, color .15s;
+    position: relative;
+  }
+  .hanzi-char.tappable::after {
+    content: "";
+    position: absolute;
+    left: 12%; right: 12%;
+    bottom: 4px;
+    height: 2px;
+    background: rgba(108, 92, 231, .35);
+    border-radius: 2px;
+  }
+  .hanzi-char.tappable:hover {
+    background: rgba(108, 92, 231, .12);
+  }
+  .hanzi-char.tappable:active {
+    background: rgba(108, 92, 231, .22);
+  }
+  .card .word .pinyin {
+    margin-top: 10px; font-size: 22px; color: #4b5563; font-style: italic;
+  }
+  .speak-btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    border: 2px solid #dfe4ea;
+    background: #fafbfc;
+    color: var(--bg-2);
+    font-size: 16px;
+    cursor: pointer;
+    margin-left: 8px;
+    vertical-align: middle;
+    transition: transform .12s, background .15s;
+    flex-shrink: 0;
+  }
+  .speak-btn:hover { background: #eef0ff; }
+  .speak-btn:active { transform: scale(.9); }
+  .speak-btn.speaking { background: var(--bg-2); color: white; border-color: var(--bg-2); }
+  .speak-inline {
+    width: 28px; height: 28px; font-size: 13px; margin-left: 6px;
+  }
+  .example-row {
+    display: flex; align-items: flex-start; gap: 4px;
+  }
+  .example-row .example { flex: 1; }
+  .card .body {
+    flex: 1; margin-top: 18px;
+    overflow-y: auto;
+    transition: opacity .2s;
+  }
+  .card.front-hidden .body { opacity: 0; pointer-events: none; }
+  .card .english {
+    font-size: 19px; font-weight: 600; line-height: 1.4; color: #1f2937;
+    padding-bottom: 12px;
+    border-bottom: 1px dashed rgba(223,228,234,.85);
+  }
+  .card .example {
+    margin-top: 12px;
+    font-size: 17px; line-height: 1.6; color: #1f2937;
+  }
+  .card .example-en {
+    margin-top: 6px;
+    font-size: 14px; color: #4b5563; line-height: 1.5;
+  }
+  .tok {
+    border-radius: 4px;
+    padding: 0 1px;
+    transition: background .15s, color .15s;
+  }
+  .tok.pair {
+    cursor: pointer;
+    border-bottom: 1px dotted #b2bec3;
+  }
+  .tok.pair:not(.highlight):not(.highlight-en):hover {
+    background: #f1f2f6;
+  }
+  .tok.pair.highlight {
+    background: #ffeaa7 !important;
+    color: #2d3436;
+    border-bottom-color: transparent;
+  }
+  .tok.pair.highlight-en {
+    background: #fab1a0 !important;
+    color: #2d3436;
+    border-bottom-color: transparent;
+  }
+  .pair-hint {
+    margin-top: 8px;
+    font-size: 11px; color: #4b5563; text-align: center;
+    opacity: .8;
+  }
+  .tap-hint {
+    margin-top: 14px;
+    text-align: center; font-size: 12px; color: #4b5563;
+    opacity: 0; transition: opacity .2s;
+  }
+  .card.front-hidden .tap-hint.show-when-hidden { opacity: 1; }
+  .stroke-hint {
+    text-align: center; font-size: 11px; color: rgba(108, 92, 231, .8);
+    margin-top: 6px;
+    opacity: 0; transition: opacity .2s;
+  }
+  .card.front-hidden .stroke-hint { opacity: 1; }
+
+  /* ---------- Action buttons ---------- */
+  .actions {
+    display: flex; justify-content: space-around; align-items: center;
+    padding: 12px 8px 18px;
+  }
+  .action-btn {
+    width: 64px; height: 64px;
+    border-radius: 50%;
+    border: none;
+    font-size: 28px;
+    cursor: pointer;
+    box-shadow: 0 6px 18px rgba(0,0,0,.18);
+    display: flex; align-items: center; justify-content: center;
+    background: white;
+    transition: transform .12s;
+  }
+  .action-btn:active { transform: scale(.92); }
+  .action-btn.known   { color: var(--known); }
+  .action-btn.unknown { color: var(--unknown); }
+  .action-btn.flip    { width: 52px; height: 52px; font-size: 22px; color: var(--bg-2); }
+
+  /* ---------- Summary ---------- */
+  #summary { padding: 16px 12px; color: white; overflow-y: auto; }
+  #summary h2 { margin: 8px 4px 4px; font-size: 26px; }
+  #summary .stats {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 10px; margin: 12px 0 18px;
+  }
+  #summary .stat {
+    background: rgba(255,255,255,.18);
+    border-radius: 14px; padding: 14px;
+    backdrop-filter: blur(6px);
+  }
+  #summary .stat .num { font-size: 30px; font-weight: 700; }
+  #summary .stat .lbl { font-size: 12px; opacity: .9; }
+  #summary .list {
+    background: white; color: var(--text);
+    border-radius: 16px; padding: 8px;
+    max-height: 50vh; overflow-y: auto;
+    box-shadow: var(--shadow);
+  }
+  #summary .item {
+    display: grid; grid-template-columns: auto 1fr auto;
+    gap: 10px; align-items: center;
+    padding: 10px 12px;
+    border-bottom: 1px solid #f1f2f6;
+  }
+  #summary .item:last-child { border-bottom: none; }
+  #summary .item .h { font-size: 22px; font-weight: 700; }
+  #summary .item .meta { font-size: 12px; color: var(--muted); }
+  #summary .item .en { grid-column: 2 / -1; font-size: 14px; color: var(--text); }
+  #summary .empty { padding: 24px; text-align: center; color: var(--muted); }
+  #summary .summary-actions {
+    display: flex; gap: 10px; margin-top: 16px;
+  }
+  #summary .summary-actions button {
+    flex: 1;
+    padding: 14px;
+    border-radius: 999px;
+    border: none;
+    font-size: 15px; font-weight: 700;
+    cursor: pointer;
+  }
+  #summary .summary-actions .primary { background: white; color: #6c5ce7; }
+  #summary .summary-actions .ghost { background: rgba(255,255,255,.2); color: white; border: 2px solid rgba(255,255,255,.5); }
+
+  /* ---------- Empty / loading ---------- */
+  .center-msg {
+    flex: 1; display: flex; align-items: center; justify-content: center;
+    color: white; text-align: center; padding: 24px; font-size: 16px;
+  }
+
+  /* ---------- Stroke order modal ---------- */
+  #stroke-modal {
+    position: fixed; inset: 0;
+    background: rgba(20, 16, 30, .65);
+    backdrop-filter: blur(8px);
+    z-index: 1000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    touch-action: auto;
+  }
+  #stroke-modal.open { display: flex; }
+  .stroke-card {
+    background: linear-gradient(135deg, #f4efe8, #e0d1c2);
+    border-radius: 22px;
+    box-shadow: 0 25px 60px rgba(0,0,0,.4);
+    padding: 20px;
+    width: min(92vw, 420px);
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    color: #2b221d;
+  }
+  .stroke-top {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 12px;
+  }
+  .stroke-title {
+    font-size: 28px; font-weight: 700;
+    font-family: "PingFang TC", "Microsoft JhengHei", serif;
+    letter-spacing: .04em;
+  }
+  .stroke-close {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(43, 34, 29, .12);
+    color: #2b221d;
+    font-size: 18px; font-weight: 700;
+    cursor: pointer;
+    display: inline-flex; align-items: center; justify-content: center;
+  }
+  .stroke-close:hover { background: rgba(43, 34, 29, .22); }
+  .stroke-stage {
+    position: relative;
+    aspect-ratio: 1 / 1;
+    width: 100%;
+    display: grid; place-items: center;
+    background: rgba(255,255,255,.6);
+    border-radius: 16px;
+    border: 1px solid rgba(43, 34, 29, .12);
+  }
+  .stroke-grid {
+    position: absolute;
+    inset: 6%;
+    border-radius: 12px;
+    background:
+      linear-gradient(to right, transparent calc(33.333% - 0.5px), rgba(140,90,60,0.18) calc(33.333% - 0.5px), rgba(140,90,60,0.18) calc(33.333% + 0.5px), transparent calc(33.333% + 0.5px)),
+      linear-gradient(to right, transparent calc(66.666% - 0.5px), rgba(140,90,60,0.18) calc(66.666% - 0.5px), rgba(140,90,60,0.18) calc(66.666% + 0.5px), transparent calc(66.666% + 0.5px)),
+      linear-gradient(to bottom, transparent calc(33.333% - 0.5px), rgba(140,90,60,0.18) calc(33.333% - 0.5px), rgba(140,90,60,0.18) calc(33.333% + 0.5px), transparent calc(33.333% + 0.5px)),
+      linear-gradient(to bottom, transparent calc(66.666% - 0.5px), rgba(140,90,60,0.18) calc(66.666% - 0.5px), rgba(140,90,60,0.18) calc(66.666% + 0.5px), transparent calc(66.666% + 0.5px));
+    border: 1px dashed rgba(43, 34, 29, .2);
+  }
+  .stroke-glyph {
+    position: relative; z-index: 1;
+    width: 100%; height: 100%;
+    overflow: visible;
+  }
+  .stroke-layer {
+    fill: none;
+    stroke: #2d241f;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 48;
+    stroke-dasharray: var(--len);
+    stroke-dashoffset: var(--len);
+    animation: trace var(--stroke-duration) linear forwards;
+    animation-delay: var(--delay);
+  }
+  @keyframes trace { to { stroke-dashoffset: 0; } }
+  .stroke-loading, .stroke-error {
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    color: #6b5a4d; font-size: 14px;
+    text-align: center; padding: 20px;
+  }
+  .stroke-controls {
+    display: flex; gap: 8px;
+    margin-top: 12px;
+    justify-content: center;
+  }
+  .stroke-btn {
+    appearance: none; border: 0;
+    border-radius: 999px;
+    padding: 10px 18px;
+    background: #8c5a3c;
+    color: #fff;
+    font-size: 14px; font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 6px 16px rgba(140, 90, 60, .25);
+  }
+  .stroke-btn:hover { background: #7a4d34; }
+  .stroke-btn.ghost {
+    background: rgba(43, 34, 29, .08);
+    color: #2b221d;
+    box-shadow: none;
+  }
+  .stroke-btn.ghost:hover { background: rgba(43, 34, 29, .15); }
+  .stroke-meta {
+    margin-top: 10px;
+    font-size: 12px;
+    color: rgba(43, 34, 29, .7);
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+
+<div id="app">
+  <header>
+    <div class="header-left">
+      <button class="home-btn" id="home-btn" hidden title="Back to home" aria-label="Back to home">🏠</button>
+      <div class="title">📚 Vocab Swipe</div>
+      <button class="shuffle-btn" id="shuffle-btn" title="Shuffle wallpaper" aria-label="Shuffle wallpaper">🎨</button>
+    </div>
+    <div class="progress" id="progress"></div>
+  </header>
+
+  <!-- START SCREEN -->
+  <section class="screen active" id="start">
+    <h1>Swipe to Learn</h1>
+    <p>← Swipe left if you <b>know it</b><br>
+       → Swipe right if it's <b>new to you</b><br>
+       Tap the card to flip for the meaning.</p>
+
+    <div class="script-label">Character set</div>
+    <div style="display:flex; justify-content:center;">
+      <div class="script-toggle">
+        <button class="script-btn selected" data-script="cn">简体 Simplified</button>
+        <button class="script-btn" data-script="tw">繁體 Traditional</button>
+      </div>
+    </div>
+
+    <div class="level-grid">
+      <button class="level-btn" data-level="beginner">Beginner<small>初級 · 464 字</small></button>
+      <button class="level-btn" data-level="intermediate">Intermediate<small>中級 · 377 字</small></button>
+      <button class="level-btn" data-level="advanced">Advanced<small>高級 · 356 字</small></button>
+      <button class="level-btn full selected" data-level="all">Mixed<small>混合所有等級</small></button>
+    </div>
+
+    <button class="start-cta" id="start-btn">Start Round (30 words)</button>
+    <div class="hint">Tip: tap a character on the card to see its stroke order.</div>
+  </section>
+
+  <!-- DECK SCREEN -->
+  <section class="screen" id="deck-screen">
+    <div class="deck" id="deck"></div>
+    <div class="actions">
+      <button class="action-btn known"   id="btn-known"   title="I know this">✓</button>
+      <button class="action-btn flip"    id="btn-flip"    title="Flip card">⟳</button>
+      <button class="action-btn unknown" id="btn-unknown" title="New to me">✗</button>
+    </div>
+  </section>
+
+  <!-- SUMMARY SCREEN -->
+  <section class="screen" id="summary">
+    <h2>Round complete 🎉</h2>
+    <div class="stats">
+      <div class="stat"><div class="num" id="stat-known">0</div><div class="lbl">Known ✓</div></div>
+      <div class="stat"><div class="num" id="stat-unknown">0</div><div class="lbl">To Learn ✗</div></div>
+    </div>
+    <div style="font-weight:600;margin:0 4px 8px">Words to learn:</div>
+    <div class="list" id="unknown-list"></div>
+    <div class="summary-actions">
+      <button class="ghost" id="again-unknowns">Practice these again</button>
+      <button class="primary" id="new-round">New round</button>
+    </div>
+  </section>
+</div>
+
+<!-- STROKE ORDER MODAL -->
+<div id="stroke-modal" role="dialog" aria-modal="true" aria-labelledby="stroke-title">
+  <div class="stroke-card">
+    <div class="stroke-top">
+      <div class="stroke-title" id="stroke-title">—</div>
+      <button class="stroke-close" id="stroke-close" aria-label="Close">✕</button>
+    </div>
+    <div class="stroke-stage">
+      <div class="stroke-grid" aria-hidden="true"></div>
+      <svg class="stroke-glyph" viewBox="0 0 1024 1024" aria-label="stroke animation" role="img"></svg>
+      <div class="stroke-loading" id="stroke-loading" hidden>Loading…</div>
+      <div class="stroke-error" id="stroke-error" hidden></div>
+    </div>
+    <div class="stroke-controls">
+      <button class="stroke-btn ghost" id="stroke-prev" hidden>← Prev</button>
+      <button class="stroke-btn" id="stroke-replay">Replay</button>
+      <button class="stroke-btn ghost" id="stroke-next" hidden>Next →</button>
+    </div>
+    <div class="stroke-meta" id="stroke-meta"></div>
+  </div>
+</div>
+
+<script>
+(async () => {
+  const ASSET_BASE_URL = new URL('.', window.location.href);
+  const assetUrl = path => new URL(path, ASSET_BASE_URL).href;
+
+  // ---------- Wallpapers ----------
+  const WALLPAPER_BASE = assetUrl('wallpapers/');
+  let WALLPAPERS = [];
+  let currentWallpaper = null;
+  function shuffleWallpaper() {
+    if (!WALLPAPERS.length) return;
+    let next;
+    if (WALLPAPERS.length === 1) {
+      next = WALLPAPERS[0];
+    } else {
+      do { next = WALLPAPERS[Math.floor(Math.random() * WALLPAPERS.length)]; }
+      while (next === currentWallpaper);
+    }
+    currentWallpaper = next;
+    document.body.style.setProperty('--wallpaper', `url("${WALLPAPER_BASE}${encodeURIComponent(next)}")`);
+  }
+
+  const shuffleBtn = document.getElementById('shuffle-btn');
+  if (shuffleBtn) shuffleBtn.addEventListener('click', shuffleWallpaper);
+
+  try {
+    const wres = await fetch(assetUrl('wallpapers.json'), { cache: 'no-cache' });
+    if (wres.ok) {
+      WALLPAPERS = await wres.json();
+      shuffleWallpaper();
+    }
+  } catch (e) {
+    console.warn('No wallpaper manifest; falling back to gradient', e);
+  }
+
+  let VOCAB;
+  try {
+    const res = await fetch(assetUrl('vocab-data.json') + '?v=' + Date.now(), { cache: 'no-store' });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    VOCAB = await res.json();
+  } catch (err) {
+    const startP = document.querySelector('#start p');
+    if (startP) startP.innerHTML = 'Failed to load vocabulary data.<br>Please refresh the page.';
+    console.error('Failed to load vocab-data.json', err);
+    return;
+  }
+  const ROUND_SIZE = 30;
+
+  // ---------- Dictionary for translation pair alignment ----------
+  const DICT = (() => {
+    const d = {};
+    const cleanEn = raw => {
+      if (!raw) return '';
+      let s = String(raw).split(/[,;]/)[0].trim();
+      s = s.replace(/^\(.*?\)\s*/g, '').trim();
+      s = s.replace(/^to\s+/i, '').trim();
+      return s;
+    };
+    ['beginner','intermediate','advanced'].forEach(lvl => {
+      VOCAB[lvl].forEach(w => {
+        const en = cleanEn(w.en);
+        if (!en) return;
+        const candidates = new Set();
+        [w.tw, w.cn].forEach(k => {
+          if (!k) return;
+          candidates.add(k);
+          candidates.add(k.replace(/[\(（].*?[\)）]/g, ''));
+          candidates.add(k.replace(/[\(（]|[\)）]/g, ''));
+          k.split(/[\/／]/).forEach(part => {
+            const p = part.replace(/[\(（].*?[\)）]/g, '').replace(/[\(（]|[\)）]/g, '').trim();
+            if (p) candidates.add(p);
+          });
+        });
+        candidates.forEach(c => {
+          if (c && !d[c]) d[c] = { en };
+        });
+      });
+    });
+    return d;
+  })();
+
+  const PAIR_SKIP = new Set([
+    '的','了','嗎','呢','吧','呀','啊','嘛','喔','喲','著','過','在','是','把','被','也','都'
+  ]);
+  const PUNCT_RE = /[，。！？；：、,.!?;:"'""''「」『』（）()\s]/;
+
+  function tokenizeChinese(str) {
+    const out = [];
+    let i = 0;
+    while (i < str.length) {
+      const ch = str[i];
+      if (PUNCT_RE.test(ch)) { out.push({ type: 'sep', text: ch }); i++; continue; }
+      let matched = null;
+      for (let len = Math.min(4, str.length - i); len >= 1; len--) {
+        const sub = str.substr(i, len);
+        if (DICT[sub]) { matched = { text: sub, en: DICT[sub].en }; break; }
+      }
+      if (matched) { out.push({ type: 'word', ...matched }); i += matched.text.length; }
+      else { out.push({ type: 'char', text: ch }); i += 1; }
+    }
+    return out;
+  }
+
+  function findEnglishMatch(meaning, enTokens, used) {
+    if (!meaning) return -1;
+    const stem = meaning.toLowerCase().replace(/[^a-z]/g, '');
+    if (stem.length < 2) return -1;
+    for (let i = 0; i < enTokens.length; i++) {
+      if (used.has(i) || enTokens[i].type !== 'word') continue;
+      const w = enTokens[i].text.toLowerCase().replace(/[^a-z]/g, '');
+      if (w === stem) { used.add(i); return i; }
+    }
+    for (let i = 0; i < enTokens.length; i++) {
+      if (used.has(i) || enTokens[i].type !== 'word') continue;
+      const w = enTokens[i].text.toLowerCase().replace(/[^a-z]/g, '');
+      if (!w || w.length < 3) continue;
+      const minLen = Math.min(stem.length, w.length);
+      if (minLen < 3) continue;
+      const a = stem.slice(0, minLen);
+      const b = w.slice(0, minLen);
+      if (a === b) { used.add(i); return i; }
+    }
+    return -1;
+  }
+
+  function tokenizeEnglish(str) {
+    const out = [];
+    const re = /([A-Za-z']+)|(\s+|[^A-Za-z']+)/g;
+    let m;
+    while ((m = re.exec(str)) !== null) {
+      if (m[1]) out.push({ type: 'word', text: m[1] });
+      else out.push({ type: 'sep', text: m[2] });
+    }
+    return out;
+  }
+
+  function alignExample(cnStr, enStr) {
+    const cnTokens = tokenizeChinese(cnStr || '');
+    const enTokens = tokenizeEnglish(enStr || '');
+    const used = new Set();
+    let nextId = 0;
+    cnTokens.forEach(t => {
+      if (t.type !== 'word') return;
+      if (PAIR_SKIP.has(t.text)) return;
+      const idx = findEnglishMatch(t.en, enTokens, used);
+      if (idx >= 0) {
+        nextId++;
+        t.pairId = nextId;
+        enTokens[idx].pairId = nextId;
+      }
+    });
+    return { cnTokens, enTokens };
+  }
+
+  function renderTokens(tokens, sideClass) {
+    return tokens.map(t => {
+      if (t.type !== 'word' && t.type !== 'char') return escapeHtml(t.text);
+      const pair = t.pairId
+        ? ` data-pair="${t.pairId}" data-side="${sideClass}"`
+        : '';
+      const cls = t.pairId ? 'tok pair' : 'tok';
+      return `<span class="${cls}"${pair}>${escapeHtml(t.text)}</span>`;
+    }).join('');
+  }
+
+  // ---------- Stroke order ----------
+  const STROKE_DATA_URL = ch =>
+    `https://raw.githubusercontent.com/chanind/hanzi-writer-data/master/data/${encodeURIComponent(ch)}.json`;
+  const STROKE_CACHE_PREFIX = 'strokes::';
+  const STROKE_MEM = new Map();
+  const CJK_RE = /[㐀-䶿一-鿿豈-﫿]/;
+
+  function isCJKChar(ch) { return CJK_RE.test(ch); }
+
+  async function loadStrokeData(ch) {
+    if (STROKE_MEM.has(ch)) return STROKE_MEM.get(ch);
+    // localStorage cache
+    try {
+      const cached = localStorage.getItem(STROKE_CACHE_PREFIX + ch);
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        STROKE_MEM.set(ch, parsed);
+        return parsed;
+      }
+    } catch (_) { /* localStorage may be disabled */ }
+
+    const res = await fetch(STROKE_DATA_URL(ch));
+    if (!res.ok) throw new Error(`HTTP ${res.status} for ${ch}`);
+    const data = await res.json();
+    STROKE_MEM.set(ch, data);
+    try { localStorage.setItem(STROKE_CACHE_PREFIX + ch, JSON.stringify(data)); } catch (_) {}
+    return data;
+  }
+
+  const strokeModal = document.getElementById('stroke-modal');
+  const strokeSvg = strokeModal.querySelector('.stroke-glyph');
+  const strokeTitle = document.getElementById('stroke-title');
+  const strokeLoading = document.getElementById('stroke-loading');
+  const strokeError = document.getElementById('stroke-error');
+  const strokeMeta = document.getElementById('stroke-meta');
+  const strokeReplay = document.getElementById('stroke-replay');
+  const strokePrev = document.getElementById('stroke-prev');
+  const strokeNext = document.getElementById('stroke-next');
+  const strokeClose = document.getElementById('stroke-close');
+
+  let currentStrokeQueue = [];
+  let currentStrokeIndex = 0;
+
+  function clearSvg() {
+    while (strokeSvg.firstChild) strokeSvg.removeChild(strokeSvg.firstChild);
+  }
+
+  function medianPath(points) {
+    const [first, ...rest] = points;
+    return `M ${first[0]} ${first[1]} ${rest.map(([x, y]) => `L ${x} ${y}`).join(' ')}`;
+  }
+
+  function animateStrokes(data) {
+    clearSvg();
+    if (!data || !Array.isArray(data.medians) || !data.medians.length) {
+      strokeError.textContent = 'No stroke data for this character.';
+      strokeError.hidden = false;
+      return;
+    }
+    strokeError.hidden = true;
+    const SVG_NS = 'http://www.w3.org/2000/svg';
+    // Frame transform mirrors the demo: shift + flip (hanzi-writer-data uses cartesian Y-up)
+    const frame = document.createElementNS(SVG_NS, 'g');
+    frame.setAttribute('transform', 'translate(140 -22)');
+    strokeSvg.appendChild(frame);
+    const group = document.createElementNS(SVG_NS, 'g');
+    group.setAttribute('transform', 'translate(0 768) scale(0.72 -0.72)');
+    frame.appendChild(group);
+
+    const strokeSpeed = 500; // px per second
+    const strokeGap = 0;     // seconds between strokes
+    let currentTime = 0;
+
+    data.medians.forEach(points => {
+      if (!points || !points.length) return;
+      const path = document.createElementNS(SVG_NS, 'path');
+      path.setAttribute('d', medianPath(points));
+      path.setAttribute('class', 'stroke-layer');
+      group.appendChild(path);
+      const length = path.getTotalLength() || 1;
+      const duration = Math.max(length / strokeSpeed, 0.2);
+      path.style.setProperty('--len', `${length}`);
+      path.style.setProperty('--stroke-duration', `${duration}s`);
+      path.style.setProperty('--delay', `${currentTime}s`);
+      currentTime += duration + strokeGap;
+    });
+    strokeMeta.textContent = `${data.medians.length} stroke${data.medians.length === 1 ? '' : 's'}`;
+  }
+
+  function restartAnimation() {
+    // force reflow so CSS animations restart
+    clearSvg();
+    strokeSvg.getBoundingClientRect();
+    const ch = currentStrokeQueue[currentStrokeIndex];
+    if (!ch) return;
+    const data = STROKE_MEM.get(ch);
+    if (data) animateStrokes(data);
+  }
+
+  async function showStrokeForIndex(idx) {
+    currentStrokeIndex = Math.max(0, Math.min(idx, currentStrokeQueue.length - 1));
+    const ch = currentStrokeQueue[currentStrokeIndex];
+    if (!ch) return;
+
+    // Multi-character navigation buttons
+    const multi = currentStrokeQueue.length > 1;
+    strokePrev.hidden = !multi;
+    strokeNext.hidden = !multi;
+    strokePrev.disabled = currentStrokeIndex === 0;
+    strokeNext.disabled = currentStrokeIndex === currentStrokeQueue.length - 1;
+    strokePrev.style.opacity = strokePrev.disabled ? .4 : 1;
+    strokeNext.style.opacity = strokeNext.disabled ? .4 : 1;
+
+    strokeTitle.textContent = multi
+      ? `${ch}  (${currentStrokeIndex + 1}/${currentStrokeQueue.length})`
+      : ch;
+
+    clearSvg();
+    strokeError.hidden = true;
+    strokeMeta.textContent = '';
+    strokeLoading.hidden = false;
+
+    try {
+      const data = await loadStrokeData(ch);
+      strokeLoading.hidden = true;
+      animateStrokes(data);
+    } catch (err) {
+      strokeLoading.hidden = true;
+      strokeError.textContent = `Couldn't load stroke data for "${ch}". Check your internet connection.`;
+      strokeError.hidden = false;
+      console.warn(err);
+    }
+  }
+
+  function openStrokeModal(text, startIndex = 0) {
+    const chars = Array.from(text).filter(isCJKChar);
+    if (!chars.length) return;
+    currentStrokeQueue = chars;
+    strokeModal.classList.add('open');
+    showStrokeForIndex(startIndex);
+  }
+
+  function closeStrokeModal() {
+    strokeModal.classList.remove('open');
+    clearSvg();
+    currentStrokeQueue = [];
+  }
+
+  strokeReplay.addEventListener('click', restartAnimation);
+  strokePrev.addEventListener('click', () => showStrokeForIndex(currentStrokeIndex - 1));
+  strokeNext.addEventListener('click', () => showStrokeForIndex(currentStrokeIndex + 1));
+  strokeClose.addEventListener('click', closeStrokeModal);
+  strokeModal.addEventListener('click', e => {
+    if (e.target === strokeModal) closeStrokeModal();
+  });
+  document.addEventListener('keydown', e => {
+    if (!strokeModal.classList.contains('open')) return;
+    if (e.key === 'Escape') closeStrokeModal();
+    else if (e.key === 'ArrowLeft' && !strokePrev.hidden && !strokePrev.disabled) showStrokeForIndex(currentStrokeIndex - 1);
+    else if (e.key === 'ArrowRight' && !strokeNext.hidden && !strokeNext.disabled) showStrokeForIndex(currentStrokeIndex + 1);
+    else if (e.key === ' ' || e.key === 'r' || e.key === 'R') { e.preventDefault(); restartAnimation(); }
+  });
+
+  // ---------- State ----------
+  const state = {
+    level: 'all',
+    script: 'cn',
+    queue: [],
+    index: 0,
+    total: 0,
+    known: [],
+    unknown: [],
+    activeCard: null,
+  };
+
+  // ---------- Helpers ----------
+  const $ = sel => document.querySelector(sel);
+  const screens = { start: $('#start'), deck: $('#deck-screen'), summary: $('#summary') };
+  function show(name) {
+    Object.values(screens).forEach(s => s.classList.remove('active'));
+    screens[name].classList.add('active');
+    const homeBtn = $('#home-btn');
+    if (homeBtn) homeBtn.hidden = (name === 'start');
+  }
+  function shuffle(arr) {
+    const a = arr.slice();
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }
+  function pickPool(level) {
+    if (level === 'all') {
+      return [...VOCAB.beginner, ...VOCAB.intermediate, ...VOCAB.advanced];
+    }
+    return VOCAB[level] || [];
+  }
+
+  // ---------- Start screen ----------
+  document.querySelectorAll('.level-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.level-btn').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+      state.level = btn.dataset.level;
+    });
+  });
+  document.querySelectorAll('.script-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.script-btn').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+      state.script = btn.dataset.script;
+    });
+  });
+  $('#start-btn').addEventListener('click', () => startRound());
+
+  $('#home-btn').addEventListener('click', () => {
+    if (synth && synth.speaking) synth.cancel();
+    state.queue = [];
+    state.index = 0;
+    state.total = 0;
+    state.known = [];
+    state.unknown = [];
+    state.activeCard = null;
+    $('#deck').innerHTML = '';
+    $('#progress').textContent = '';
+    show('start');
+  });
+
+  function startRound(customPool) {
+    const pool = customPool || pickPool(state.level);
+    if (!pool.length) return;
+    state.queue = shuffle(pool).slice(0, Math.min(ROUND_SIZE, pool.length));
+    state.total = state.queue.length;
+    state.index = 0;
+    state.known = [];
+    state.unknown = [];
+    shuffleWallpaper();
+    show('deck');
+    renderDeck();
+    updateProgress();
+  }
+
+  function updateProgress() {
+    const remaining = state.queue.length - state.index;
+    if (remaining > 0) {
+      $('#progress').textContent = `${state.index + 1} / ${state.total}`;
+    } else {
+      $('#progress').textContent = '';
+    }
+  }
+
+  // ---------- Deck rendering ----------
+  function renderDeck() {
+    const deck = $('#deck');
+    deck.innerHTML = '';
+    const upcoming = state.queue.slice(state.index, state.index + 3);
+    upcoming.slice().reverse().forEach((word, idxFromTop) => {
+      const depth = upcoming.length - 1 - idxFromTop;
+      const card = buildCard(word, depth === 0);
+      const scale = 1 - depth * 0.04;
+      const translateY = depth * 8;
+      card.style.transform = `translateY(${translateY}px) scale(${scale})`;
+      card.style.zIndex = 100 - depth;
+      card.style.opacity = depth >= 2 ? .7 : 1;
+      deck.appendChild(card);
+      if (depth === 0) {
+        state.activeCard = card;
+        attachGestures(card);
+      }
+    });
+    if (upcoming.length === 0) {
+      finishRound();
+    }
+  }
+
+  // Render hanzi as per-character spans; CJK chars get tappable styling +
+  // open the stroke modal positioned at that character.
+  function renderHanziChars(text) {
+    const chars = Array.from(text);
+    return chars.map((ch, idx) => {
+      if (isCJKChar(ch)) {
+        return `<span class="hanzi-char tappable" data-char-idx="${idx}">${escapeHtml(ch)}</span>`;
+      }
+      return `<span class="hanzi-char">${escapeHtml(ch)}</span>`;
+    }).join('');
+  }
+
+  function buildCard(word, isTop) {
+    const card = document.createElement('div');
+    card.className = 'card front-hidden';
+    const display = word[state.script] || word.tw || word.cn;
+    card.dataset.word = display;
+    const exampleText = (state.script === 'cn' && word['ex-cn']) ? word['ex-cn'] : word.ex;
+    const catText = (state.script === 'cn' && word['cat-cn']) ? word['cat-cn'] : (word.cat || '');
+    const aligned = (exampleText && word.exEn) ? alignExample(exampleText, word.exEn) : null;
+    const hasPairs = aligned && aligned.cnTokens.some(t => t.pairId);
+    const hasCJK = Array.from(display).some(isCJKChar);
+    card.innerHTML = `
+      <div class="stamp left">KNOWN</div>
+      <div class="stamp right">NEW</div>
+      <div class="head">
+        <span>${escapeHtml(catText)}</span>
+        <span class="pos">${escapeHtml(word.pos || '')}</span>
+      </div>
+      <div class="word">
+        <div class="hanzi" data-hanzi="${escapeAttr(display)}">
+          ${renderHanziChars(display)}
+          <button class="speak-btn js-speak" data-text="${escapeAttr(display)}" title="Listen" aria-label="Listen to word">🔊</button>
+        </div>
+        <div class="pinyin">${escapeHtml(word.py || '')}</div>
+        ${hasCJK ? `<div class="stroke-hint">Tap a character to see stroke order ✏️</div>` : ''}
+      </div>
+      <div class="body">
+        <div class="english">${escapeHtml(word.en || '')}</div>
+        ${exampleText ? `
+          <div class="example-row">
+            <div class="example">${aligned ? renderTokens(aligned.cnTokens, 'cn') : escapeHtml(exampleText)}</div>
+            <button class="speak-btn speak-inline js-speak" data-text="${escapeAttr(exampleText)}" title="Listen" aria-label="Listen to example">🔊</button>
+          </div>` : ''}
+        ${word.exEn ? `<div class="example-en">${aligned ? renderTokens(aligned.enTokens, 'en') : escapeHtml(word.exEn)}</div>` : ''}
+        ${hasPairs ? `<div class="pair-hint">Tap an underlined word to see its translation</div>` : ''}
+      </div>
+      <div class="tap-hint show-when-hidden">Tap card to reveal meaning</div>
+    `;
+    // Speak buttons
+    card.querySelectorAll('.js-speak').forEach(btn => {
+      btn.addEventListener('click', e => {
+        if (card.dataset.dragged === '1') { card.dataset.dragged = ''; return; }
+        e.stopPropagation();
+        speak(btn.dataset.text, btn);
+      });
+    });
+    // Tappable hanzi characters — open stroke order modal
+    card.querySelectorAll('.hanzi-char.tappable').forEach(el => {
+      el.addEventListener('click', e => {
+        if (card.dataset.dragged === '1') { card.dataset.dragged = ''; return; }
+        e.stopPropagation();
+        const charIdx = parseInt(el.dataset.charIdx, 10) || 0;
+        // Build queue from CJK chars only; map clicked index to its position in that subset
+        const allChars = Array.from(display);
+        const cjkChars = allChars.filter(isCJKChar);
+        const clickedChar = allChars[charIdx];
+        const startIndex = Math.max(0, cjkChars.indexOf(clickedChar));
+        currentStrokeQueue = cjkChars;
+        strokeModal.classList.add('open');
+        showStrokeForIndex(startIndex);
+      });
+    });
+    // Pair highlight tokens
+    card.querySelectorAll('.tok.pair').forEach(tok => {
+      tok.addEventListener('click', e => {
+        if (card.dataset.dragged === '1') { card.dataset.dragged = ''; return; }
+        e.stopPropagation();
+        const pid = tok.dataset.pair;
+        if (!pid) return;
+        const partners = card.querySelectorAll(`.tok.pair[data-pair="${pid}"]`);
+        const active = tok.classList.contains('highlight') || tok.classList.contains('highlight-en');
+        card.querySelectorAll('.tok.highlight, .tok.highlight-en').forEach(el => {
+          el.classList.remove('highlight', 'highlight-en');
+        });
+        if (!active) {
+          partners.forEach(el => {
+            const cls = el.dataset.side === 'en' ? 'highlight-en' : 'highlight';
+            el.classList.add(cls);
+          });
+        }
+      });
+    });
+    if (isTop) {
+      card.addEventListener('click', e => {
+        if (card.dataset.dragged === '1') { card.dataset.dragged = ''; return; }
+        card.classList.toggle('front-hidden');
+      });
+    }
+    return card;
+  }
+
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, c => ({
+      '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+    }[c]));
+  }
+  function escapeAttr(s) { return escapeHtml(s); }
+
+  // ---------- Speech ----------
+  const synth = window.speechSynthesis;
+  let zhVoice = null;
+  function pickZhVoice() {
+    if (!synth) return null;
+    const voices = synth.getVoices();
+    if (!voices.length) return null;
+    return voices.find(v => /zh[-_]TW/i.test(v.lang))
+        || voices.find(v => /zh[-_]HK/i.test(v.lang))
+        || voices.find(v => /^zh/i.test(v.lang))
+        || null;
+  }
+  if (synth) {
+    zhVoice = pickZhVoice();
+    synth.onvoiceschanged = () => { zhVoice = pickZhVoice(); };
+  }
+  function speak(text, btn) {
+    if (!synth) {
+      alert('Sorry, your browser doesn\'t support speech. Try Chrome, Edge, or Safari.');
+      return;
+    }
+    synth.cancel();
+    document.querySelectorAll('.speak-btn.speaking').forEach(b => b.classList.remove('speaking'));
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = (zhVoice && zhVoice.lang) || 'zh-TW';
+    if (zhVoice) u.voice = zhVoice;
+    u.rate = 0.9;
+    u.pitch = 1;
+    if (btn) {
+      btn.classList.add('speaking');
+      u.onend = u.onerror = () => btn.classList.remove('speaking');
+    }
+    synth.speak(u);
+  }
+
+  // ---------- Gestures ----------
+  function attachGestures(card) {
+    let startX = 0, startY = 0, dx = 0, dy = 0;
+    let tracking = false, dragging = false, pointerId = null;
+    const DRAG_THRESHOLD = 8;
+
+    const stampL = card.querySelector('.stamp.left');
+    const stampR = card.querySelector('.stamp.right');
+
+    const onDown = e => {
+      if (e.button !== undefined && e.button !== 0) return;
+      pointerId = e.pointerId;
+      startX = e.clientX; startY = e.clientY;
+      dx = 0; dy = 0;
+      tracking = true;
+      dragging = false;
+    };
+    const onMove = e => {
+      if (!tracking || e.pointerId !== pointerId) return;
+      dx = e.clientX - startX;
+      dy = e.clientY - startY;
+      if (!dragging) {
+        if (Math.abs(dx) < DRAG_THRESHOLD && Math.abs(dy) < DRAG_THRESHOLD) return;
+        // Only start dragging if movement is mostly horizontal — vertical
+        // movement should let the example body scroll normally.
+        if (Math.abs(dy) > Math.abs(dx) * 1.2) { tracking = false; return; }
+        dragging = true;
+        card.classList.add('dragging');
+        card.setPointerCapture && card.setPointerCapture(pointerId);
+      }
+      const rot = dx * 0.08;
+      card.style.transform = `translate(${dx}px, ${dy}px) rotate(${rot}deg)`;
+      const ratio = Math.min(Math.abs(dx) / 120, 1);
+      if (dx < 0) { stampL.style.opacity = ratio; stampR.style.opacity = 0; }
+      else if (dx > 0) { stampR.style.opacity = ratio; stampL.style.opacity = 0; }
+      else { stampL.style.opacity = stampR.style.opacity = 0; }
+    };
+    const onUp = e => {
+      if (!tracking) return;
+      tracking = false;
+      if (!dragging) { pointerId = null; return; }
+      dragging = false;
+      card.classList.remove('dragging');
+      const threshold = 110;
+      if (Math.abs(dx) > 10) card.dataset.dragged = '1';
+      if (dx <= -threshold) {
+        flyOut(card, -1);
+      } else if (dx >= threshold) {
+        flyOut(card, +1);
+      } else {
+        card.style.transform = '';
+        stampL.style.opacity = stampR.style.opacity = 0;
+      }
+      pointerId = null;
+    };
+
+    card.addEventListener('pointerdown', onDown);
+    card.addEventListener('pointermove', onMove);
+    card.addEventListener('pointerup', onUp);
+    card.addEventListener('pointercancel', onUp);
+  }
+
+  function flyOut(card, direction) {
+    const word = state.queue[state.index];
+    if (!word) return;
+    if (direction < 0) state.known.push(word); else state.unknown.push(word);
+
+    const off = direction * (window.innerWidth + 200);
+    card.style.transition = 'transform .35s ease, opacity .35s ease';
+    card.style.transform = `translate(${off}px, 60px) rotate(${direction * 25}deg)`;
+    card.style.opacity = 0;
+
+    state.index += 1;
+    setTimeout(() => {
+      renderDeck();
+      updateProgress();
+    }, 280);
+  }
+
+  // ---------- Action buttons ----------
+  $('#btn-known').addEventListener('click', () => {
+    if (state.activeCard) flyOut(state.activeCard, -1);
+  });
+  $('#btn-unknown').addEventListener('click', () => {
+    if (state.activeCard) flyOut(state.activeCard, +1);
+  });
+  $('#btn-flip').addEventListener('click', () => {
+    if (state.activeCard) state.activeCard.classList.toggle('front-hidden');
+  });
+
+  // ---------- Summary ----------
+  function finishRound() {
+    show('summary');
+    $('#stat-known').textContent = state.known.length;
+    $('#stat-unknown').textContent = state.unknown.length;
+    const list = $('#unknown-list');
+    if (!state.unknown.length) {
+      list.innerHTML = `<div class="empty">All known! Great job 🌟</div>`;
+    } else {
+      list.innerHTML = state.unknown.map(w => `
+        <div class="item">
+          <div class="h">${escapeHtml(w[state.script] || w.tw || w.cn)}</div>
+          <div class="meta">${escapeHtml(w.py || '')} · ${escapeHtml(w.pos || '')}</div>
+          <div class="en">${escapeHtml(w.en || '')}</div>
+        </div>`).join('');
+    }
+    $('#progress').textContent = '';
+  }
+
+  $('#new-round').addEventListener('click', () => show('start'));
+  $('#again-unknowns').addEventListener('click', () => {
+    if (!state.unknown.length) { show('start'); return; }
+    startRound(state.unknown.slice());
+  });
+
+})();
+</script>
+</body>
+</html>
