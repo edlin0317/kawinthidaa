@@ -234,7 +234,6 @@
     padding: 0 4px;
     transition: background .15s, color .15s;
     position: relative;
-    font-family: "標楷體", "DFKai-SB", "BiauKai", "Kaiti TC", "Kaiti", "STKaiti", serif;
   }
   .hanzi-char.tappable::after {
     content: "";
@@ -461,7 +460,7 @@
   }
   .stroke-title {
     font-size: 28px; font-weight: 700;
-    font-family: "標楷體", "DFKai-SB", "BiauKai", "Kaiti TC", "Kaiti", "STKaiti", serif;
+    font-family: "PingFang TC", "Microsoft JhengHei", serif;
     letter-spacing: .04em;
   }
   .stroke-close {
@@ -475,51 +474,6 @@
     display: inline-flex; align-items: center; justify-content: center;
   }
   .stroke-close:hover { background: rgba(43, 34, 29, .22); }
-  .stroke-top-actions {
-    display: inline-flex; align-items: center; gap: 6px;
-  }
-  .stroke-icon-btn {
-    width: 36px; height: 36px;
-    border-radius: 50%;
-    border: none;
-    background: rgba(43, 34, 29, .12);
-    color: #2b221d;
-    font-size: 16px;
-    cursor: pointer;
-    display: inline-flex; align-items: center; justify-content: center;
-    transition: background .15s, transform .12s;
-  }
-  .stroke-icon-btn:hover { background: rgba(43, 34, 29, .22); }
-  .stroke-icon-btn:active { transform: scale(.92); }
-  .stroke-icon-btn.active {
-    background: #8c5a3c;
-    color: white;
-  }
-  .stroke-practice {
-    position: absolute; inset: 0;
-    display: none;
-    border-radius: 16px;
-    overflow: hidden;
-  }
-  .stroke-stage.practice-mode .stroke-practice { display: block; }
-  .stroke-stage.practice-mode .stroke-glyph,
-  .stroke-stage.practice-mode .stroke-grid { display: none; }
-  .practice-bg {
-    position: absolute; inset: 0;
-    display: flex; align-items: center; justify-content: center;
-    font-family: "標楷體", "DFKai-SB", "BiauKai", "Kaiti TC", "Kaiti", "STKaiti", serif;
-    color: rgba(43, 34, 29, .14);
-    font-size: clamp(140px, 60vmin, 320px);
-    line-height: 1;
-    user-select: none;
-    pointer-events: none;
-  }
-  .practice-canvas {
-    position: absolute; inset: 0;
-    width: 100%; height: 100%;
-    touch-action: none;
-    cursor: crosshair;
-  }
   .stroke-stage {
     position: relative;
     aspect-ratio: 1 / 1;
@@ -596,7 +550,7 @@
     text-align: center;
   }
 </style>
-<script type="text/javascript" nonce="25ebfd27a72e4fb3b8c5d77c22e" src="//local.adguard.org?ts=1778250725656&amp;type=content-script&amp;dmn=mcsaetherruntime.seas-ia101.gateway.prod.island.powerapps.com&amp;url=https%3A%2F%2Fmcsaetherruntime.seas-ia101.gateway.prod.island.powerapps.com%2Fv1%2Ffiles%2F46ae75dd-f3f1-483e-84a7-0ac273d88c32&amp;app=msedgewebview2.exe&amp;css=3&amp;js=1&amp;rel=1&amp;rji=1&amp;sbe=1"></script><script type="text/javascript" nonce="25ebfd27a72e4fb3b8c5d77c22e" src="//local.adguard.org?ts=1778250725656&amp;name=AdGuard%20Extra&amp;name=AdGuard%20Popup%20Blocker&amp;type=user-script"></script><script type="text/javascript" nonce="25ebfd27a72e4fb3b8c5d77c22e" src="//local.adguard.org?ts=1778247126700&amp;type=content-script&amp;dmn=cht365-my.sharepoint.com&amp;url=https%3A%2F%2Fcht365-my.sharepoint.com%2Fpersonal%2Fedlin_cht_com_tw%2F_layouts%2F15%2Fdownload.aspx%3FUniqueId%3Dbd914fdd-3bd7-4b6a-a46f-2ac913eaf492%26Translate%3Dfalse%26tempauth%3Dv1.eyJzaXRlaWQiOiJhMGJjOTlmNC0yYmZiLTQ0NGEtYjkyOC01ZjhkNzU1M2M0MDYiLCJhcHBfZGlzcGxheW5hbWUiOiJNMzY1Q2hhdENsaWVudCIsImFwcGlkIjoiYzBhYjhjZTktZTlhMC00MmU3LWIwNjQtMzNkNDIyZGY0MWYxIiwiYXVkIjoiMDAwMDAwMDMtMDAwMC0wZmYxLWNlMDAtMDAwMDAwMDAwMDAwL2NodDM2NS1teS5zaGFyZXBvaW50LmNvbUA1NGViOTQ0MC1jZjAzLTQ1ZmUtODM1ZS02MWJkNGNlNTE1YzgiLCJleHAiOiIxNzc4MjUyNDQ4In0.CkAKDGVudHJhX2NsYWltcxIwQ0lISjk4OEdFQUFhRm5OVmJIaHpORmMyYTJ0VFRIVkdWM2xEVmxWMFFVRXFBQT09CjIKCmFjdG9yYXBwaWQSJDAwMDAwMDAzLTAwMDAtMDAwMC1jMDAwLTAwMDAwMDAwMDAwMAoKCgRzbmlkEgI2NBILCJrT2teHxZY_EAUaDTQwLjEyNi4zOC4xMDIqLGpvS1hPZWszRU1Zd0FHL2x6YkNCWWJKV0NGRk9JMXd3bUpveHd5dnRTUEk9MJIBOAFCEKIRoQ7HIABwkyPOB7Bc4ZVKEGhhc2hlZHByb29mdG9rZW5SCFsia21zaSJdaiQwMGI3NDlmOS00OGUyLWRjMTMtNjY1ZS04YzAzZTc3YmFmMjdyKTBoLmZ8bWVtYmVyc2hpcHwxMDAzMjAwMzYwZmEyZWM1QGxpdmUuY29tegEyggESCUCU61QDz_5FEYNeYb1M5RXIkgEJ5p6X6Im-5b63mgEJ5p6X6Im-5b63ogEQZWRsaW5AY2h0LmNvbS50d6oBEDEwMDMyMDAzNjBGQTJFQzWyAV1hbGxmaWxlcy53cml0ZSBjb250YWluZXIuc2VsZWN0ZWQgZ3JvdXAucmVhZCBhbGxzaXRlcy53cml0ZSBhbGxwcm9maWxlcy5yZWFkIGFsbHByb2ZpbGVzLnJlYWTIAQHiARZzVWx4czRXNmtrU0x1Rld5Q1ZVdEFB.yRSYFN5JGRXts_-ZeeB0XEb9LGpcLQfHAtPqdV0fBcg%26ApiVersion%3D2.0&amp;app=msedgewebview2.exe&amp;css=3&amp;js=1&amp;rel=1&amp;rji=1&amp;sbe=1"></script><script type="text/javascript" nonce="25ebfd27a72e4fb3b8c5d77c22e" src="//local.adguard.org?ts=1778247126700&amp;name=AdGuard%20Extra&amp;name=AdGuard%20Popup%20Blocker&amp;type=user-script"></script></head>
+<script type="text/javascript" nonce="25ebfd27a72e4fb3b8c5d77c22e" src="//local.adguard.org?ts=1778247126700&amp;type=content-script&amp;dmn=cht365-my.sharepoint.com&amp;url=https%3A%2F%2Fcht365-my.sharepoint.com%2Fpersonal%2Fedlin_cht_com_tw%2F_layouts%2F15%2Fdownload.aspx%3FUniqueId%3Dbd914fdd-3bd7-4b6a-a46f-2ac913eaf492%26Translate%3Dfalse%26tempauth%3Dv1.eyJzaXRlaWQiOiJhMGJjOTlmNC0yYmZiLTQ0NGEtYjkyOC01ZjhkNzU1M2M0MDYiLCJhcHBfZGlzcGxheW5hbWUiOiJNMzY1Q2hhdENsaWVudCIsImFwcGlkIjoiYzBhYjhjZTktZTlhMC00MmU3LWIwNjQtMzNkNDIyZGY0MWYxIiwiYXVkIjoiMDAwMDAwMDMtMDAwMC0wZmYxLWNlMDAtMDAwMDAwMDAwMDAwL2NodDM2NS1teS5zaGFyZXBvaW50LmNvbUA1NGViOTQ0MC1jZjAzLTQ1ZmUtODM1ZS02MWJkNGNlNTE1YzgiLCJleHAiOiIxNzc4MjUyNDQ4In0.CkAKDGVudHJhX2NsYWltcxIwQ0lISjk4OEdFQUFhRm5OVmJIaHpORmMyYTJ0VFRIVkdWM2xEVmxWMFFVRXFBQT09CjIKCmFjdG9yYXBwaWQSJDAwMDAwMDAzLTAwMDAtMDAwMC1jMDAwLTAwMDAwMDAwMDAwMAoKCgRzbmlkEgI2NBILCJrT2teHxZY_EAUaDTQwLjEyNi4zOC4xMDIqLGpvS1hPZWszRU1Zd0FHL2x6YkNCWWJKV0NGRk9JMXd3bUpveHd5dnRTUEk9MJIBOAFCEKIRoQ7HIABwkyPOB7Bc4ZVKEGhhc2hlZHByb29mdG9rZW5SCFsia21zaSJdaiQwMGI3NDlmOS00OGUyLWRjMTMtNjY1ZS04YzAzZTc3YmFmMjdyKTBoLmZ8bWVtYmVyc2hpcHwxMDAzMjAwMzYwZmEyZWM1QGxpdmUuY29tegEyggESCUCU61QDz_5FEYNeYb1M5RXIkgEJ5p6X6Im-5b63mgEJ5p6X6Im-5b63ogEQZWRsaW5AY2h0LmNvbS50d6oBEDEwMDMyMDAzNjBGQTJFQzWyAV1hbGxmaWxlcy53cml0ZSBjb250YWluZXIuc2VsZWN0ZWQgZ3JvdXAucmVhZCBhbGxzaXRlcy53cml0ZSBhbGxwcm9maWxlcy5yZWFkIGFsbHByb2ZpbGVzLnJlYWTIAQHiARZzVWx4czRXNmtrU0x1Rld5Q1ZVdEFB.yRSYFN5JGRXts_-ZeeB0XEb9LGpcLQfHAtPqdV0fBcg%26ApiVersion%3D2.0&amp;app=msedgewebview2.exe&amp;css=3&amp;js=1&amp;rel=1&amp;rji=1&amp;sbe=1"></script><script type="text/javascript" nonce="25ebfd27a72e4fb3b8c5d77c22e" src="//local.adguard.org?ts=1778247126700&amp;name=AdGuard%20Extra&amp;name=AdGuard%20Popup%20Blocker&amp;type=user-script"></script></head>
 <body>
 
 <div id="app">
@@ -666,23 +620,15 @@
   <div class="stroke-card">
     <div class="stroke-top">
       <div class="stroke-title" id="stroke-title">—</div>
-      <div class="stroke-top-actions">
-        <button class="stroke-icon-btn" id="stroke-eraser" aria-label="Erase" title="Erase" hidden>🧽</button>
-        <button class="stroke-icon-btn" id="stroke-practice-toggle" aria-label="Toggle practice" title="Practice writing">✏️</button>
-        <button class="stroke-close" id="stroke-close" aria-label="Close">✕</button>
-      </div>
+      <button class="stroke-close" id="stroke-close" aria-label="Close">✕</button>
     </div>
     <div class="stroke-stage">
       <div class="stroke-grid" aria-hidden="true"></div>
       <svg class="stroke-glyph" viewBox="0 0 1024 1024" aria-label="stroke animation" role="img"></svg>
       <div class="stroke-loading" id="stroke-loading" hidden>Loading…</div>
       <div class="stroke-error" id="stroke-error" hidden></div>
-      <div class="stroke-practice" id="stroke-practice">
-        <div class="practice-bg" id="practice-bg"></div>
-        <canvas class="practice-canvas" id="practice-canvas"></canvas>
-      </div>
     </div>
-    <div class="stroke-controls" id="stroke-controls-anim">
+    <div class="stroke-controls">
       <button class="stroke-btn ghost" id="stroke-prev" hidden>← Prev</button>
       <button class="stroke-btn" id="stroke-replay">Replay</button>
       <button class="stroke-btn ghost" id="stroke-next" hidden>Next →</button>
@@ -1076,13 +1022,6 @@
       ? `${ch}  (${currentStrokeIndex + 1}/${currentStrokeQueue.length})`
       : ch;
 
-    if (typeof practiceMode !== 'undefined' && practiceMode) {
-      practiceBgEl.textContent = ch;
-      clearCanvas();
-      strokeMeta.textContent = 'Trace the character';
-      return;
-    }
-
     clearSvg();
     strokeError.hidden = true;
     strokeMeta.textContent = '';
@@ -1112,101 +1051,12 @@
     strokeModal.classList.remove('open');
     clearSvg();
     currentStrokeQueue = [];
-    if (practiceMode) {
-      practiceMode = false;
-      strokeStageEl.classList.remove('practice-mode');
-      strokePracticeToggle.classList.remove('active');
-      strokeControlsAnim.hidden = false;
-      strokeEraser.hidden = true;
-    }
   }
 
   strokeReplay.addEventListener('click', restartAnimation);
   strokePrev.addEventListener('click', () => showStrokeForIndex(currentStrokeIndex - 1));
   strokeNext.addEventListener('click', () => showStrokeForIndex(currentStrokeIndex + 1));
   strokeClose.addEventListener('click', closeStrokeModal);
-
-  // ---------- Practice mode ----------
-  const strokeStageEl = strokeModal.querySelector('.stroke-stage');
-  const strokePracticeToggle = document.getElementById('stroke-practice-toggle');
-  const practiceBgEl = document.getElementById('practice-bg');
-  const practiceCanvas = document.getElementById('practice-canvas');
-  const strokeControlsAnim = document.getElementById('stroke-controls-anim');
-  const strokeEraser = document.getElementById('stroke-eraser');
-  let practiceMode = false;
-  let drawCtx = null;
-  let drawing = false, lastX = 0, lastY = 0;
-
-  function setupCanvas() {
-    const rect = practiceCanvas.getBoundingClientRect();
-    if (rect.width === 0 || rect.height === 0) return;
-    const dpr = window.devicePixelRatio || 1;
-    practiceCanvas.width = Math.round(rect.width * dpr);
-    practiceCanvas.height = Math.round(rect.height * dpr);
-    drawCtx = practiceCanvas.getContext('2d');
-    drawCtx.setTransform(1, 0, 0, 1, 0, 0);
-    drawCtx.scale(dpr, dpr);
-    drawCtx.lineCap = 'round';
-    drawCtx.lineJoin = 'round';
-    drawCtx.lineWidth = 5;
-    drawCtx.strokeStyle = '#2d241f';
-  }
-  function clearCanvas() {
-    if (!drawCtx) return;
-    const dpr = window.devicePixelRatio || 1;
-    drawCtx.clearRect(0, 0, practiceCanvas.width / dpr, practiceCanvas.height / dpr);
-  }
-  function setPracticeMode(on) {
-    practiceMode = on;
-    strokeStageEl.classList.toggle('practice-mode', on);
-    strokePracticeToggle.classList.toggle('active', on);
-    strokeControlsAnim.hidden = on;
-    strokeEraser.hidden = !on;
-    strokeLoading.hidden = true;
-    strokeError.hidden = true;
-    if (on) {
-      const ch = currentStrokeQueue[currentStrokeIndex] || '';
-      practiceBgEl.textContent = ch;
-      strokeMeta.textContent = 'Trace the character';
-      requestAnimationFrame(() => { setupCanvas(); clearCanvas(); });
-    } else {
-      strokeMeta.textContent = '';
-      restartAnimation();
-    }
-  }
-  strokePracticeToggle.addEventListener('click', () => setPracticeMode(!practiceMode));
-  strokeEraser.addEventListener('click', clearCanvas);
-
-  practiceCanvas.addEventListener('pointerdown', e => {
-    if (!drawCtx) setupCanvas();
-    drawing = true;
-    try { practiceCanvas.setPointerCapture(e.pointerId); } catch (_) {}
-    const rect = practiceCanvas.getBoundingClientRect();
-    lastX = e.clientX - rect.left;
-    lastY = e.clientY - rect.top;
-    drawCtx.beginPath();
-    drawCtx.arc(lastX, lastY, drawCtx.lineWidth / 2, 0, Math.PI * 2);
-    drawCtx.fillStyle = '#2d241f';
-    drawCtx.fill();
-    e.preventDefault();
-  });
-  practiceCanvas.addEventListener('pointermove', e => {
-    if (!drawing || !drawCtx) return;
-    const rect = practiceCanvas.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-    drawCtx.beginPath();
-    drawCtx.moveTo(lastX, lastY);
-    drawCtx.lineTo(x, y);
-    drawCtx.stroke();
-    lastX = x; lastY = y;
-    e.preventDefault();
-  });
-  const endDraw = () => { drawing = false; };
-  practiceCanvas.addEventListener('pointerup', endDraw);
-  practiceCanvas.addEventListener('pointercancel', endDraw);
-  practiceCanvas.addEventListener('pointerleave', endDraw);
-
   strokeModal.addEventListener('click', e => {
     if (e.target === strokeModal) closeStrokeModal();
   });
