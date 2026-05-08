@@ -777,7 +777,7 @@
 
   // ---------- Stroke order ----------
   const STROKE_DATA_URL = ch =>
-    assetUrl(`stroke/${encodeURIComponent(ch)}.json`);
+    `https://raw.githubusercontent.com/chanind/hanzi-writer-data/master/data/${encodeURIComponent(ch)}.json`;
   const STROKE_CACHE_PREFIX = 'strokes::';
   const STROKE_MEM = new Map();
   const CJK_RE = /[㐀-䶿一-鿿豈-﫿]/;
