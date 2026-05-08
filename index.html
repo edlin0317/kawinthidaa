@@ -588,7 +588,6 @@
     text-align: center;
   }
 </style>
-<script type="text/javascript" nonce="25ebfd27a72e4fb3b8c5d77c22e" src="//local.adguard.org?ts=1778256125103&amp;type=content-script&amp;dmn=cht365-my.sharepoint.com&amp;url=https%3A%2F%2Fcht365-my.sharepoint.com%2Fpersonal%2Fedlin_cht_com_tw%2F_layouts%2F15%2Fdownload.aspx%3FUniqueId%3Df0285fd5-6795-4355-b654-cbe8c7193ce6%26Translate%3Dfalse%26tempauth%3Dv1.eyJzaXRlaWQiOiJhMGJjOTlmNC0yYmZiLTQ0NGEtYjkyOC01ZjhkNzU1M2M0MDYiLCJhcHBfZGlzcGxheW5hbWUiOiJNMzY1Q2hhdENsaWVudCIsImFwcGlkIjoiYzBhYjhjZTktZTlhMC00MmU3LWIwNjQtMzNkNDIyZGY0MWYxIiwiYXVkIjoiMDAwMDAwMDMtMDAwMC0wZmYxLWNlMDAtMDAwMDAwMDAwMDAwL2NodDM2NS1teS5zaGFyZXBvaW50LmNvbUA1NGViOTQ0MC1jZjAzLTQ1ZmUtODM1ZS02MWJkNGNlNTE1YzgiLCJleHAiOiIxNzc4MjU5ODkyIn0.CkAKDGVudHJhX2NsYWltcxIwQ05iMjk4OEdFQUFhRm1ab2RXSnZhamhuU1ZWcFIzaFpObGhmYlUxclFVRXFBQT09CjIKCmFjdG9yYXBwaWQSJDAwMDAwMDAzLTAwMDAtMDAwMC1jMDAwLTAwMDAwMDAwMDAwMAoKCgRzbmlkEgI2NBILCLyqnqOyyZY_EAUaDTQwLjEyNi4zOC4xNjEqLFBNQUhWcXhQcVluMUJaS2NsMXczNmQ5VHhLT0x0aWtkYzQ5c0VvaFBsOU09MJIBOAFCEKIRqCgU4ABwcrTwZiEOyXNKEGhhc2hlZHByb29mdG9rZW5SCFsia21zaSJdaiQwMGI3NDlmOS00OGUyLWRjMTMtNjY1ZS04YzAzZTc3YmFmMjdyKTBoLmZ8bWVtYmVyc2hpcHwxMDAzMjAwMzYwZmEyZWM1QGxpdmUuY29tegEyggESCUCU61QDz_5FEYNeYb1M5RXIkgEJ5p6X6Im-5b63mgEJ5p6X6Im-5b63ogEQZWRsaW5AY2h0LmNvbS50d6oBEDEwMDMyMDAzNjBGQTJFQzWyAV1hbGxmaWxlcy53cml0ZSBjb250YWluZXIuc2VsZWN0ZWQgZ3JvdXAucmVhZCBhbGxzaXRlcy53cml0ZSBhbGxwcm9maWxlcy5yZWFkIGFsbHByb2ZpbGVzLnJlYWTIAQHiARZmaHVib2o4Z0lVaUd4WTZYX21Na0FB.wMhYvQpnaEsb1wiKyQ4Volft4SyoMD30JlPR7jSc-90%26ApiVersion%3D2.0&amp;app=msedgewebview2.exe&amp;css=3&amp;js=1&amp;rel=1&amp;rji=1&amp;sbe=1"></script><script type="text/javascript" nonce="25ebfd27a72e4fb3b8c5d77c22e" src="//local.adguard.org?ts=1778256125103&amp;name=AdGuard%20Extra&amp;name=AdGuard%20Popup%20Blocker&amp;type=user-script"></script></head>
 <body>
 
 <div id="app">
@@ -705,15 +704,18 @@
   const shuffleBtn = document.getElementById('shuffle-btn');
   if (shuffleBtn) shuffleBtn.addEventListener('click', shuffleWallpaper);
 
-  try {
-    const wres = await fetch(assetUrl('wallpapers.json'), { cache: 'no-cache' });
-    if (wres.ok) {
-      WALLPAPERS = await wres.json();
-      shuffleWallpaper();
-    }
-  } catch (e) {
-    console.warn('No wallpaper manifest; falling back to gradient', e);
-  }
+  // Fire-and-forget: content blockers (AdGuard etc.) can hang the request
+  // instead of rejecting it, so we never await this. Page proceeds with the
+  // gradient background; wallpaper applies later if/when it loads.
+  fetch(assetUrl('wallpapers.json'), { cache: 'no-cache' })
+    .then(wres => wres.ok ? wres.json() : null)
+    .then(data => {
+      if (data) {
+        WALLPAPERS = data;
+        shuffleWallpaper();
+      }
+    })
+    .catch(e => console.warn('No wallpaper manifest; falling back to gradient', e));
 
   let VOCAB;
   try {
