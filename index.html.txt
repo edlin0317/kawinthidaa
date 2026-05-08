@@ -505,14 +505,10 @@
     stroke-width: 48;
     stroke-dasharray: var(--len);
     stroke-dashoffset: var(--len);
-    opacity: 0;
     animation: trace var(--stroke-duration) linear forwards;
     animation-delay: var(--delay);
   }
-  @keyframes trace {
-    0%   { opacity: 1; stroke-dashoffset: var(--len); }
-    100% { opacity: 1; stroke-dashoffset: 0; }
-  }
+  @keyframes trace { to { stroke-dashoffset: 0; } }
   .stroke-loading, .stroke-error {
     position: absolute; inset: 0;
     display: flex; align-items: center; justify-content: center;
