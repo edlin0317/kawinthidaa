@@ -472,6 +472,27 @@
     display: inline-flex; align-items: center; justify-content: center;
   }
   .stroke-close:hover { background: rgba(43, 34, 29, .22); }
+  .stroke-top-actions {
+    display: inline-flex; align-items: center; gap: 6px;
+  }
+  .stroke-icon-btn {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(43, 34, 29, .12);
+    color: #2b221d;
+    font-size: 16px;
+    cursor: pointer;
+    display: inline-flex; align-items: center; justify-content: center;
+    transition: background .15s, transform .12s;
+  }
+  .stroke-icon-btn:hover { background: rgba(43, 34, 29, .22); }
+  .stroke-icon-btn:active { transform: scale(.92); }
+  .stroke-icon-btn.active {
+    background: #8c5a3c;
+    color: #fff;
+    box-shadow: 0 4px 12px rgba(140, 90, 60, .3);
+  }
   .stroke-stage {
     position: relative;
     aspect-ratio: 1 / 1;
@@ -481,6 +502,25 @@
     border-radius: 16px;
     border: 1px solid rgba(43, 34, 29, .12);
   }
+  .stroke-stage.practice .stroke-layer {
+    stroke: rgba(120, 110, 100, .22) !important;
+    stroke-dasharray: none !important;
+    stroke-dashoffset: 0 !important;
+    opacity: 1 !important;
+    animation: none !important;
+  }
+  .stroke-canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 2;
+    display: none;
+    touch-action: none;
+    cursor: crosshair;
+    border-radius: 16px;
+  }
+  .stroke-stage.practice .stroke-canvas { display: block; }
   .stroke-grid {
     position: absolute;
     inset: 6%;
@@ -548,7 +588,7 @@
     text-align: center;
   }
 </style>
-</head>
+<script type="text/javascript" nonce="25ebfd27a72e4fb3b8c5d77c22e" src="//local.adguard.org?ts=1778256125103&amp;type=content-script&amp;dmn=cht365-my.sharepoint.com&amp;url=https%3A%2F%2Fcht365-my.sharepoint.com%2Fpersonal%2Fedlin_cht_com_tw%2F_layouts%2F15%2Fdownload.aspx%3FUniqueId%3Df0285fd5-6795-4355-b654-cbe8c7193ce6%26Translate%3Dfalse%26tempauth%3Dv1.eyJzaXRlaWQiOiJhMGJjOTlmNC0yYmZiLTQ0NGEtYjkyOC01ZjhkNzU1M2M0MDYiLCJhcHBfZGlzcGxheW5hbWUiOiJNMzY1Q2hhdENsaWVudCIsImFwcGlkIjoiYzBhYjhjZTktZTlhMC00MmU3LWIwNjQtMzNkNDIyZGY0MWYxIiwiYXVkIjoiMDAwMDAwMDMtMDAwMC0wZmYxLWNlMDAtMDAwMDAwMDAwMDAwL2NodDM2NS1teS5zaGFyZXBvaW50LmNvbUA1NGViOTQ0MC1jZjAzLTQ1ZmUtODM1ZS02MWJkNGNlNTE1YzgiLCJleHAiOiIxNzc4MjU5ODkyIn0.CkAKDGVudHJhX2NsYWltcxIwQ05iMjk4OEdFQUFhRm1ab2RXSnZhamhuU1ZWcFIzaFpObGhmYlUxclFVRXFBQT09CjIKCmFjdG9yYXBwaWQSJDAwMDAwMDAzLTAwMDAtMDAwMC1jMDAwLTAwMDAwMDAwMDAwMAoKCgRzbmlkEgI2NBILCLyqnqOyyZY_EAUaDTQwLjEyNi4zOC4xNjEqLFBNQUhWcXhQcVluMUJaS2NsMXczNmQ5VHhLT0x0aWtkYzQ5c0VvaFBsOU09MJIBOAFCEKIRqCgU4ABwcrTwZiEOyXNKEGhhc2hlZHByb29mdG9rZW5SCFsia21zaSJdaiQwMGI3NDlmOS00OGUyLWRjMTMtNjY1ZS04YzAzZTc3YmFmMjdyKTBoLmZ8bWVtYmVyc2hpcHwxMDAzMjAwMzYwZmEyZWM1QGxpdmUuY29tegEyggESCUCU61QDz_5FEYNeYb1M5RXIkgEJ5p6X6Im-5b63mgEJ5p6X6Im-5b63ogEQZWRsaW5AY2h0LmNvbS50d6oBEDEwMDMyMDAzNjBGQTJFQzWyAV1hbGxmaWxlcy53cml0ZSBjb250YWluZXIuc2VsZWN0ZWQgZ3JvdXAucmVhZCBhbGxzaXRlcy53cml0ZSBhbGxwcm9maWxlcy5yZWFkIGFsbHByb2ZpbGVzLnJlYWTIAQHiARZmaHVib2o4Z0lVaUd4WTZYX21Na0FB.wMhYvQpnaEsb1wiKyQ4Volft4SyoMD30JlPR7jSc-90%26ApiVersion%3D2.0&amp;app=msedgewebview2.exe&amp;css=3&amp;js=1&amp;rel=1&amp;rji=1&amp;sbe=1"></script><script type="text/javascript" nonce="25ebfd27a72e4fb3b8c5d77c22e" src="//local.adguard.org?ts=1778256125103&amp;name=AdGuard%20Extra&amp;name=AdGuard%20Popup%20Blocker&amp;type=user-script"></script></head>
 <body>
 
 <div id="app">
@@ -618,11 +658,16 @@
   <div class="stroke-card">
     <div class="stroke-top">
       <div class="stroke-title" id="stroke-title">—</div>
-      <button class="stroke-close" id="stroke-close" aria-label="Close">✕</button>
+      <div class="stroke-top-actions">
+        <button class="stroke-icon-btn" id="stroke-erase" aria-label="Erase drawing" title="Erase">🧽</button>
+        <button class="stroke-icon-btn" id="stroke-practice" aria-label="Practice writing" title="Practice writing" aria-pressed="false">✏️</button>
+        <button class="stroke-close" id="stroke-close" aria-label="Close">✕</button>
+      </div>
     </div>
     <div class="stroke-stage">
       <div class="stroke-grid" aria-hidden="true"></div>
       <svg class="stroke-glyph" viewBox="0 0 1024 1024" aria-label="stroke animation" role="img"></svg>
+      <canvas class="stroke-canvas" id="stroke-canvas" aria-label="practice writing canvas"></canvas>
       <div class="stroke-loading" id="stroke-loading" hidden>Loading…</div>
       <div class="stroke-error" id="stroke-error" hidden></div>
     </div>
@@ -942,6 +987,10 @@
   const strokePrev = document.getElementById('stroke-prev');
   const strokeNext = document.getElementById('stroke-next');
   const strokeClose = document.getElementById('stroke-close');
+  const strokeStage = strokeModal.querySelector('.stroke-stage');
+  const strokePractice = document.getElementById('stroke-practice');
+  const strokeErase = document.getElementById('stroke-erase');
+  const strokeCanvas = document.getElementById('stroke-canvas');
 
   let currentStrokeQueue = [];
   let currentStrokeIndex = 0;
@@ -1006,6 +1055,10 @@
     currentStrokeIndex = Math.max(0, Math.min(idx, currentStrokeQueue.length - 1));
     const ch = currentStrokeQueue[currentStrokeIndex];
     if (!ch) return;
+    if (strokeStage.classList.contains('practice')) {
+      resizeStrokeCanvas();
+      clearStrokeCanvas();
+    }
 
     // Multi-character navigation buttons
     const multi = currentStrokeQueue.length > 1;
@@ -1047,11 +1100,120 @@
 
   function closeStrokeModal() {
     strokeModal.classList.remove('open');
+    if (strokeStage.classList.contains('practice')) {
+      strokeStage.classList.remove('practice');
+      strokePractice.classList.remove('active');
+      strokePractice.setAttribute('aria-pressed', 'false');
+      strokeReplay.disabled = false;
+      strokeReplay.style.opacity = 1;
+      clearStrokeCanvas();
+    }
     clearSvg();
     currentStrokeQueue = [];
   }
 
-  strokeReplay.addEventListener('click', restartAnimation);
+  // ---------- Practice mode (scratch over faded character) ----------
+  function resizeStrokeCanvas() {
+    const rect = strokeCanvas.getBoundingClientRect();
+    if (!rect.width || !rect.height) return;
+    const dpr = window.devicePixelRatio || 1;
+    const ctx = strokeCanvas.getContext('2d');
+    const prev = ctx.getImageData ? null : null; // drawing is cleared on resize by design
+    strokeCanvas.width = Math.round(rect.width * dpr);
+    strokeCanvas.height = Math.round(rect.height * dpr);
+    strokeCanvas.style.width = rect.width + 'px';
+    strokeCanvas.style.height = rect.height + 'px';
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.scale(dpr, dpr);
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.lineWidth = 6;
+    ctx.strokeStyle = '#2d241f';
+  }
+
+  function clearStrokeCanvas() {
+    const ctx = strokeCanvas.getContext('2d');
+    ctx.save();
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.clearRect(0, 0, strokeCanvas.width, strokeCanvas.height);
+    ctx.restore();
+  }
+
+  let drawing = false, lastX = 0, lastY = 0, drawPointerId = null;
+  strokeCanvas.addEventListener('pointerdown', e => {
+    if (!strokeStage.classList.contains('practice')) return;
+    e.preventDefault();
+    drawing = true;
+    drawPointerId = e.pointerId;
+    const rect = strokeCanvas.getBoundingClientRect();
+    lastX = e.clientX - rect.left;
+    lastY = e.clientY - rect.top;
+    try { strokeCanvas.setPointerCapture(e.pointerId); } catch (_) {}
+    const ctx = strokeCanvas.getContext('2d');
+    // Dot for taps
+    ctx.beginPath();
+    ctx.arc(lastX, lastY, ctx.lineWidth / 2, 0, Math.PI * 2);
+    ctx.fillStyle = '#2d241f';
+    ctx.fill();
+  });
+  strokeCanvas.addEventListener('pointermove', e => {
+    if (!drawing || e.pointerId !== drawPointerId) return;
+    const rect = strokeCanvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    const ctx = strokeCanvas.getContext('2d');
+    ctx.beginPath();
+    ctx.moveTo(lastX, lastY);
+    ctx.lineTo(x, y);
+    ctx.stroke();
+    lastX = x;
+    lastY = y;
+  });
+  const endDraw = e => {
+    if (e && drawPointerId !== null && e.pointerId !== drawPointerId) return;
+    drawing = false;
+    drawPointerId = null;
+  };
+  strokeCanvas.addEventListener('pointerup', endDraw);
+  strokeCanvas.addEventListener('pointercancel', endDraw);
+  strokeCanvas.addEventListener('pointerleave', endDraw);
+
+  function setPracticeMode(enabled) {
+    strokeStage.classList.toggle('practice', enabled);
+    strokePractice.classList.toggle('active', enabled);
+    strokePractice.setAttribute('aria-pressed', enabled ? 'true' : 'false');
+    strokeReplay.disabled = enabled;
+    strokeReplay.style.opacity = enabled ? .4 : 1;
+    if (enabled) {
+      resizeStrokeCanvas();
+      clearStrokeCanvas();
+    } else {
+      clearStrokeCanvas();
+      restartAnimation();
+    }
+  }
+
+  strokePractice.addEventListener('click', () => {
+    setPracticeMode(!strokeStage.classList.contains('practice'));
+  });
+  strokeErase.addEventListener('click', () => {
+    if (!strokeStage.classList.contains('practice')) {
+      setPracticeMode(true);
+    } else {
+      clearStrokeCanvas();
+    }
+  });
+  window.addEventListener('resize', () => {
+    if (strokeStage.classList.contains('practice')) {
+      // Resize clears the canvas — acceptable trade-off for crisp rendering
+      resizeStrokeCanvas();
+    }
+  });
+
+  strokeReplay.addEventListener('click', () => {
+    if (strokeStage.classList.contains('practice')) return;
+    restartAnimation();
+  });
   strokePrev.addEventListener('click', () => showStrokeForIndex(currentStrokeIndex - 1));
   strokeNext.addEventListener('click', () => showStrokeForIndex(currentStrokeIndex + 1));
   strokeClose.addEventListener('click', closeStrokeModal);
