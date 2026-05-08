@@ -15,7 +15,17 @@
     --muted: #636e72;
     --shadow: 0 18px 50px rgba(0,0,0,.25);
   }
-  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  * {
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+    -webkit-user-drag: none;
+  }
+  img { -webkit-user-drag: none; pointer-events: none; }
   html, body {
     margin: 0; padding: 0; height: 100%;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang TC", "Microsoft JhengHei", sans-serif;
@@ -588,6 +598,7 @@
     text-align: center;
   }
 </style>
+<script type="text/javascript" nonce="25ebfd27a72e4fb3b8c5d77c22e" src="//local.adguard.org?ts=1778256125103&amp;type=content-script&amp;dmn=cht365-my.sharepoint.com&amp;url=https%3A%2F%2Fcht365-my.sharepoint.com%2Fpersonal%2Fedlin_cht_com_tw%2F_layouts%2F15%2Fdownload.aspx%3FUniqueId%3Df0285fd5-6795-4355-b654-cbe8c7193ce6%26Translate%3Dfalse%26tempauth%3Dv1.eyJzaXRlaWQiOiJhMGJjOTlmNC0yYmZiLTQ0NGEtYjkyOC01ZjhkNzU1M2M0MDYiLCJhcHBfZGlzcGxheW5hbWUiOiJNMzY1Q2hhdENsaWVudCIsImFwcGlkIjoiYzBhYjhjZTktZTlhMC00MmU3LWIwNjQtMzNkNDIyZGY0MWYxIiwiYXVkIjoiMDAwMDAwMDMtMDAwMC0wZmYxLWNlMDAtMDAwMDAwMDAwMDAwL2NodDM2NS1teS5zaGFyZXBvaW50LmNvbUA1NGViOTQ0MC1jZjAzLTQ1ZmUtODM1ZS02MWJkNGNlNTE1YzgiLCJleHAiOiIxNzc4MjYxMDU3In0.CkAKDGVudHJhX2NsYWltcxIwQ1BhWStNOEdFQUFhRmxSWldEbEhVbGhHTUZWNVYyRnVTVk42WkZKTVFVRXFBQT09CjIKCmFjdG9yYXBwaWQSJDAwMDAwMDAzLTAwMDAtMDAwMC1jMDAwLTAwMDAwMDAwMDAwMAoKCgRzbmlkEgI2NBILCPzOuoyJypY_EAUaDTIwLjE5MC4xNjYuMzIqLFBNQUhWcXhQcVluMUJaS2NsMXczNmQ5VHhLT0x0aWtkYzQ5c0VvaFBsOU09MJIBOAFCEKIRqUSVcABwcrT-t-5NaSRKEGhhc2hlZHByb29mdG9rZW5SCFsia21zaSJdaiQwMGI3NDlmOS00OGUyLWRjMTMtNjY1ZS04YzAzZTc3YmFmMjdyKTBoLmZ8bWVtYmVyc2hpcHwxMDAzMjAwMzYwZmEyZWM1QGxpdmUuY29tegEyggESCUCU61QDz_5FEYNeYb1M5RXIkgEJ5p6X6Im-5b63mgEJ5p6X6Im-5b63ogEQZWRsaW5AY2h0LmNvbS50d6oBEDEwMDMyMDAzNjBGQTJFQzWyAV1hbGxmaWxlcy53cml0ZSBjb250YWluZXIuc2VsZWN0ZWQgZ3JvdXAucmVhZCBhbGxzaXRlcy53cml0ZSBhbGxwcm9maWxlcy5yZWFkIGFsbHByb2ZpbGVzLnJlYWTIAQHiARZUWVg5R1JYRjBVeVdhbklTemRSTEFB.a95j-fGNg7ujQeIJrtxyV3hDbvXe3MSTq27QfIgDcS0%26ApiVersion%3D2.0&amp;app=msedgewebview2.exe&amp;css=3&amp;js=1&amp;rel=1&amp;rji=1&amp;sbe=1"></script><script type="text/javascript" nonce="25ebfd27a72e4fb3b8c5d77c22e" src="//local.adguard.org?ts=1778256125103&amp;name=AdGuard%20Extra&amp;name=AdGuard%20Popup%20Blocker&amp;type=user-script"></script></head>
 <body>
 
 <div id="app">
@@ -683,6 +694,24 @@
 (async () => {
   const ASSET_BASE_URL = new URL('.', window.location.href);
   const assetUrl = path => new URL(path, ASSET_BASE_URL).href;
+
+  // ---------- Block copy / select / drag / context menu ----------
+  ['copy', 'cut', 'paste', 'contextmenu', 'dragstart', 'selectstart'].forEach(ev => {
+    document.addEventListener(ev, e => e.preventDefault(), { capture: true });
+  });
+  // Block Ctrl/Cmd+A, Ctrl/Cmd+C, Ctrl/Cmd+X, Ctrl/Cmd+P, Ctrl/Cmd+S
+  document.addEventListener('keydown', e => {
+    const k = (e.key || '').toLowerCase();
+    if ((e.ctrlKey || e.metaKey) && ['a', 'c', 'x', 'p', 's'].includes(k)) {
+      // Allow if user is in the stroke modal pressing R/Space for replay (not these keys)
+      e.preventDefault();
+    }
+  }, { capture: true });
+  // Clear any selection that slips through
+  document.addEventListener('mouseup', () => {
+    const sel = window.getSelection && window.getSelection();
+    if (sel && sel.toString()) sel.removeAllRanges();
+  });
 
   // ---------- Wallpapers ----------
   const WALLPAPER_BASE = assetUrl('wallpapers/');
