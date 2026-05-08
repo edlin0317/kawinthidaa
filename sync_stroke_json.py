@@ -7,7 +7,10 @@ and downloads their stroke data from:
   https://github.com/chanind/hanzi-writer-data
 
 Usage:
-  python sync_stroke_json.py
+  python sync_stroke_json.py                          # Sync both Traditional and Simplified
+  python sync_stroke_json.py --variants tw           # Traditional only
+  python sync_stroke_json.py --variants cn           # Simplified only
+  python sync_stroke_json.py --variants tw,cn        # Both (explicit)
   python sync_stroke_json.py --vocab vocab-data.json --out stroke
 """
 
@@ -26,8 +29,17 @@ import sys
 HANZI_WRITER_BASE = "https://raw.githubusercontent.com/chanind/hanzi-writer-data/master/data"
 
 
-def extract_characters(vocab_path: Path) -> Set[str]:
-    """Extract all unique Chinese characters from vocabulary data."""
+def extract_characters(vocab_path: Path, variants: list[str] | None = None) -> Set[str]:
+    """Extract all unique Chinese characters from vocabulary data.
+    
+    Args:
+        vocab_path: Path to vocabulary data file
+        variants: List of variants to extract ('tw' for Traditional, 'cn' for Simplified).
+                 Defaults to ['tw', 'cn'] (both variants).
+    """
+    if variants is None:
+        variants = ["tw", "cn"]
+    
     if not vocab_path.exists():
         raise FileNotFoundError(f"Vocabulary file not found: {vocab_path}")
 
@@ -40,11 +52,12 @@ def extract_characters(vocab_path: Path) -> Set[str]:
     for level in ["beginner", "main"]:
         if level in vocab_data:
             for entry in vocab_data[level]:
-                # Extract Traditional Chinese characters
-                if "tw" in entry:
-                    for char in entry["tw"]:
-                        if ord(char) > 0x4E00 and ord(char) < 0x9FFF:
-                            characters.add(char)
+                # Extract characters from specified variants
+                for variant in variants:
+                    if variant in entry:
+                        for char in entry[variant]:
+                            if ord(char) > 0x4E00 and ord(char) < 0x9FFF:
+                                characters.add(char)
 
     return sorted(characters, key=lambda x: (ord(x), x))
 
@@ -79,12 +92,24 @@ def fetch_stroke_data(character: str, output_dir: Path, force: bool = False) -> 
         return False
 
 
-def sync_strokes(vocab_path: Path, output_dir: Path, force: bool = False) -> None:
-    """Sync all character stroke data from vocabulary."""
+def sync_strokes(vocab_path: Path, output_dir: Path, force: bool = False, variants: list[str] | None = None) -> None:
+    """Sync all character stroke data from vocabulary.
+    
+    Args:
+        vocab_path: Path to vocabulary data file
+        output_dir: Output directory for stroke JSON files
+        force: Re-download all files even if cached
+        variants: List of variants to sync ('tw' for Traditional, 'cn' for Simplified).
+                 Defaults to ['tw', 'cn'] (both variants).
+    """
+    if variants is None:
+        variants = ["tw", "cn"]
+    
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    print(f"Extracting characters from {vocab_path}...")
-    characters = extract_characters(vocab_path)
+    variant_str = ", ".join({"tw": "Traditional", "cn": "Simplified"}.get(v, v) for v in variants)
+    print(f"Extracting {variant_str} characters from {vocab_path}...")
+    characters = extract_characters(vocab_path, variants)
     print(f"Found {len(characters)} unique characters")
 
     successful = 0
@@ -136,14 +161,21 @@ def main(argv: list[str]) -> int:
         action="store_true",
         help="Re-download all files even if cached",
     )
+    parser.add_argument(
+        "--variants",
+        dest="variants",
+        default="tw,cn",
+        help="Character variants to sync: 'tw' (Traditional), 'cn' (Simplified), or comma-separated list (default: tw,cn)",
+    )
 
     args = parser.parse_args(argv)
 
     vocab_path = Path(args.vocab_path)
     output_dir = Path(args.output_dir)
+    variants = [v.strip() for v in args.variants.split(",") if v.strip()]
 
     try:
-        sync_strokes(vocab_path, output_dir, args.force)
+        sync_strokes(vocab_path, output_dir, args.force, variants)
         return 0
     except Exception as e:
         print(f"Error: {e}", file=sys.stderr)
