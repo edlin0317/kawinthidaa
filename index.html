@@ -464,16 +464,12 @@
   }
   .stroke-top {
     display: flex; justify-content: space-between; align-items: center;
-    gap: 8px;
     margin-bottom: 12px;
   }
   .stroke-title {
     font-size: 28px; font-weight: 700;
     font-family: "PingFang TC", "Microsoft JhengHei", serif;
     letter-spacing: .04em;
-  }
-  .stroke-top-actions {
-    flex: 0 0 auto;
   }
   .stroke-close {
     width: 36px; height: 36px;
@@ -674,8 +670,8 @@
       <div class="stroke-top-actions">
         <button class="stroke-icon-btn" id="stroke-erase" aria-label="Erase drawing" title="Erase">🧽</button>
         <button class="stroke-icon-btn" id="stroke-practice" aria-label="Practice writing" title="Practice writing" aria-pressed="false">✏️</button>
+        <button class="stroke-close" id="stroke-close" aria-label="Close">✕</button>
       </div>
-      <button class="stroke-close" id="stroke-close" aria-label="Close">✕</button>
     </div>
     <div class="stroke-stage">
       <div class="stroke-grid" aria-hidden="true"></div>
@@ -693,7 +689,7 @@
   </div>
 </div>
 
-<script type="text/javascript" nonce="25ebfd27a72e4fb3b8c5d77c22e" src="//local.adguard.org?ts=1778256125103&amp;type=content-script&amp;dmn=cht365-my.sharepoint.com&amp;url=https%3A%2F%2Fcht365-my.sharepoint.com%2Fpersonal%2Fedlin_cht_com_tw%2F_layouts%2F15%2Fdownload.aspx%3FUniqueId%3Dd855ac64-fc78-474f-83f4-4b9d12ae4df0%26Translate%3Dfalse%26tempauth%3Dv1.eyJzaXRlaWQiOiJhMGJjOTlmNC0yYmZiLTQ0NGEtYjkyOC01ZjhkNzU1M2M0MDYiLCJhcHBfZGlzcGxheW5hbWUiOiJNMzY1Q2hhdENsaWVudCIsImFwcGlkIjoiYzBhYjhjZTktZTlhMC00MmU3LWIwNjQtMzNkNDIyZGY0MWYxIiwiYXVkIjoiMDAwMDAwMDMtMDAwMC0wZmYxLWNlMDAtMDAwMDAwMDAwMDAwL2NodDM2NS1teS5zaGFyZXBvaW50LmNvbUA1NGViOTQ0MC1jZjAzLTQ1ZmUtODM1ZS02MWJkNGNlNTE1YzgiLCJleHAiOiIxNzc4MjYxNzIzIn0.CkAKDGVudHJhX2NsYWltcxIwQ1BhWStNOEdFQUFhRmxSWldEbEhVbGhHTUZWNVYyRnVTVk42WkZKTVFVRXFBQT09CjIKCmFjdG9yYXBwaWQSJDAwMDAwMDAzLTAwMDAtMDAwMC1jMDAwLTAwMDAwMDAwMDAwMAoKCgRzbmlkEgI2NBILCIyH9te6ypY_EAUaDjIwLjE5MC4xNDQuMTY5KixFazM5QjNNSUZqODd3NDMzSGpDQ0FZKy9lOUtWUHJPd0IxMGZkcFhxTG5JPTCSATgBQhCiEannFSAAcHK0_j4VhFUHShBoYXNoZWRwcm9vZnRva2VuUghbImttc2kiXWokMDBiNzQ5ZjktNDhlMi1kYzEzLTY2NWUtOGMwM2U3N2JhZjI3cikwaC5mfG1lbWJlcnNoaXB8MTAwMzIwMDM2MGZhMmVjNUBsaXZlLmNvbXoBMoIBEglAlOtUA8_-RRGDXmG9TOUVyJIBCeael-iJvuW-t5oBCeael-iJvuW-t6IBEGVkbGluQGNodC5jb20udHeqARAxMDAzMjAwMzYwRkEyRUM1sgFdYWxsZmlsZXMud3JpdGUgY29udGFpbmVyLnNlbGVjdGVkIGdyb3VwLnJlYWQgYWxsc2l0ZXMud3JpdGUgYWxscHJvZmlsZXMucmVhZCBhbGxwcm9maWxlcy5yZWFkyAEB4gEWVFlYOUdSWEYwVXlXYW5JU3pkUkxBQQ.mmO7UYW__AEcV9EcWrDK-RX0WD8jy-5U7SmPq4oRWBM%26ApiVersion%3D2.0&amp;app=msedgewebview2.exe&amp;css=3&amp;js=1&amp;rel=1&amp;rji=1&amp;sbe=1"></script><script type="text/javascript" nonce="25ebfd27a72e4fb3b8c5d77c22e" src="//local.adguard.org?ts=1778256125103&amp;name=AdGuard%20Extra&amp;name=AdGuard%20Popup%20Blocker&amp;type=user-script"></script><script>
+<script>
 (async () => {
   const ASSET_BASE_URL = new URL('.', window.location.href);
   const assetUrl = path => new URL(path, ASSET_BASE_URL).href;
