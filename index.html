@@ -207,6 +207,7 @@
     will-change: transform;
     transition: transform .25s ease, opacity .25s ease;
     overflow: hidden;
+    touch-action: none;
   }
   .card.dragging { transition: none; cursor: grabbing; }
   .card .stamp {
@@ -290,6 +291,7 @@
     flex: 1; margin-top: 18px;
     overflow-y: auto;
     transition: opacity .2s;
+    touch-action: none;
   }
   .card.front-hidden .body { opacity: 0; pointer-events: none; }
   .card .english {
